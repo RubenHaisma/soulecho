@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "setup": "echo 'Setting up EchoSoul...' && npm install",
+    "start-backend": "cd backend && node server.js",
+    "start-chroma": "echo 'Please start ChromaDB separately: docker run -p 8000:8000 chromadb/chroma'",
+    "dev-full": "concurrently \"npm run dev\" \"npm run start-backend\"",
+    "setup-env": "cp .env.example .env && echo 'Please update .env with your API keys'"
+  }
+}

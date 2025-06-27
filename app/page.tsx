@@ -1,0 +1,363 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
+
+export default function HomePage() {
+  const { data: session } = useSession();
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+
+  const testimonials = [
+    "It felt like having one more conversation with mom...",
+    "Their words brought comfort when I needed it most",
+    "I could hear their voice in every message"
+  ];
+
+  useEffect(() => {
+    setIsLoaded(true);
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#fdfdfd] via-[#f8f9ff] to-[#f0f4ff] overflow-hidden relative">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Floating Orbs */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-200/30 to-blue-200/30 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-pink-200/20 to-purple-200/20 rounded-full blur-lg animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-32 left-1/4 w-40 h-40 bg-gradient-to-br from-blue-200/20 to-indigo-200/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '4s' }}></div>
+        
+        {/* Subtle Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, #6366f1 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }}></div>
+
+        {/* Interactive Light Following Mouse */}
+        <div 
+          className="absolute w-96 h-96 bg-gradient-radial from-purple-100/20 via-blue-100/10 to-transparent rounded-full blur-3xl transition-all duration-1000 ease-out pointer-events-none"
+          style={{
+            left: mousePosition.x - 192,
+            top: mousePosition.y - 192,
+          }}
+        ></div>
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 py-8 px-4">
+        <div className={`max-w-6xl mx-auto flex justify-between items-center transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}>
+          <div className="flex items-center gap-4">
+            {/* Custom Logo */}
+            <div className="relative">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 via-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-200/50">
+                <div className="w-6 h-6 relative">
+                  {/* Custom Heart-Soul Icon */}
+                  <div className="absolute inset-0 bg-white rounded-full opacity-90"></div>
+                  <div className="absolute top-1 left-1 w-4 h-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
+                  <div className="absolute top-2 left-2 w-2 h-2 bg-white rounded-full animate-ping"></div>
+                </div>
+              </div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-2xl blur opacity-30 animate-pulse"></div>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent">
+                EchoSoul
+              </h1>
+              <div className="text-xs text-gray-500 tracking-wider">MEMORIES LIVE ON</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {session ? (
+              <Link href="/dashboard">
+                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full px-6">
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth/signin">
+                  <Button variant="ghost" className="text-gray-600 hover:text-gray-800 hover:bg-white/50 backdrop-blur-sm rounded-full px-6">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth/signup">
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full px-6">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
+            <Link href="/privacy">
+              <Button variant="ghost" className="text-gray-600 hover:text-gray-800 hover:bg-white/50 backdrop-blur-sm rounded-full px-6">
+                Privacy
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <main className="relative z-10 px-4 py-20">
+        <div className="max-w-6xl mx-auto">
+          {/* Main Hero Content */}
+          <div className={`text-center mb-20 transition-all duration-1200 delay-300 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            {/* Trust Badge */}
+            <div className="inline-flex items-center gap-3 bg-white/60 backdrop-blur-md border border-white/40 rounded-full px-6 py-3 mb-8 shadow-lg shadow-purple-100/20">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-gray-700">Your memories stay private and secure</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center">
+                  <div className="w-2 h-1 bg-green-500 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Main Headline */}
+            <div className="mb-8">
+              <h2 className="text-7xl md:text-8xl font-black text-gray-900 mb-4 leading-none tracking-tight">
+                Keep The
+                <br />
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    Connection
+                  </span>
+                  <div className="absolute -inset-2 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-indigo-600/20 blur-xl rounded-lg"></div>
+                </span>
+                <br />
+                Alive
+              </h2>
+              
+              <div className="relative max-w-3xl mx-auto">
+                <p className="text-xl md:text-2xl text-gray-600 leading-relaxed font-light">
+                  A sacred space where your WhatsApp conversations become a bridge to cherished memories. 
+                  <span className="font-medium text-gray-800"> Their words, their essence, forever preserved.</span>
+                </p>
+                
+                {/* Animated Underline */}
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full opacity-60 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+              <Link href={session ? "/dashboard" : "/auth/signup"}>
+                <Button 
+                  size="lg" 
+                  className="group relative bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white px-12 py-6 text-xl font-semibold rounded-full shadow-2xl shadow-purple-300/30 hover:shadow-purple-400/40 transition-all duration-500 hover:scale-105"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 relative">
+                      <div className="absolute inset-0 bg-white/20 rounded-full animate-ping"></div>
+                      <div className="relative w-6 h-6 bg-white/30 rounded-full flex items-center justify-center">
+                        <div className="w-3 h-3 bg-white rounded-full"></div>
+                      </div>
+                    </div>
+                    {session ? "Go to Dashboard" : "Begin Your Journey"}
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 rounded-full transform -skew-x-12 group-hover:animate-pulse"></div>
+                </Button>
+              </Link>
+              
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-2 border-gray-200 hover:border-purple-300 text-gray-700 hover:text-purple-700 px-12 py-6 text-xl font-medium rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-300 hover:scale-105 shadow-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-current rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-current rounded-full"></div>
+                  </div>
+                  See How It Works
+                </div>
+              </Button>
+            </div>
+
+            {/* Rotating Testimonials */}
+            <div className="relative h-16 overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center">
+                {testimonials.map((testimonial, index) => (
+                  <p 
+                    key={index}
+                    className={`absolute text-lg italic text-gray-600 transition-all duration-1000 ${
+                      index === currentTestimonial 
+                        ? 'opacity-100 translate-y-0' 
+                        : 'opacity-0 translate-y-4'
+                    }`}
+                  >
+                    "{testimonial}"
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Features Grid */}
+          <div className={`grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-20 transition-all duration-1000 delay-600 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+            {/* Feature 1 */}
+            <Card className="group border-0 bg-white/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:bg-white/60 rounded-3xl overflow-hidden">
+              <CardContent className="p-10 text-center relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 to-blue-400"></div>
+                
+                <div className="relative mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-purple-200/50 group-hover:shadow-purple-300/70 transition-all duration-500">
+                    <div className="w-10 h-10 relative">
+                      {/* Custom Upload Icon */}
+                      <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
+                      <div className="absolute top-2 left-2 w-6 h-4 bg-white rounded-sm"></div>
+                      <div className="absolute bottom-2 left-3 w-4 h-1 bg-white/60 rounded-full"></div>
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                    </div>
+                  </div>
+                  <div className="absolute -inset-2 bg-gradient-to-br from-purple-400/20 to-purple-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-purple-700 transition-colors">
+                  Sacred Upload
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-lg">
+                  Share your WhatsApp memories with reverence. Our gentle parser honors every word, 
+                  understanding the unique voice of your loved one.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Feature 2 */}
+            <Card className="group border-0 bg-white/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:bg-white/60 rounded-3xl overflow-hidden">
+              <CardContent className="p-10 text-center relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-400"></div>
+                
+                <div className="relative mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-blue-200/50 group-hover:shadow-blue-300/70 transition-all duration-500">
+                    <div className="w-10 h-10 relative">
+                      {/* Custom Chat Icon */}
+                      <div className="absolute inset-0 bg-white/20 rounded-2xl"></div>
+                      <div className="absolute top-2 left-2 w-6 h-1 bg-white rounded-full"></div>
+                      <div className="absolute top-4 left-2 w-4 h-1 bg-white/70 rounded-full"></div>
+                      <div className="absolute top-6 left-2 w-5 h-1 bg-white/50 rounded-full"></div>
+                      <div className="absolute bottom-1 right-1 w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="absolute -inset-2 bg-gradient-to-br from-blue-400/20 to-blue-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-blue-700 transition-colors">
+                  Living Conversations
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-lg">
+                  Experience authentic dialogue that captures their essence. Every response 
+                  reflects their personality, humor, and the love you shared.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Feature 3 */}
+            <Card className="group border-0 bg-white/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:bg-white/60 rounded-3xl overflow-hidden">
+              <CardContent className="p-10 text-center relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-green-400"></div>
+                
+                <div className="relative mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 via-green-500 to-green-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-green-200/50 group-hover:shadow-green-300/70 transition-all duration-500">
+                    <div className="w-10 h-10 relative">
+                      {/* Custom Shield Icon */}
+                      <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
+                      <div className="absolute top-1 left-2 w-6 h-6 bg-white/30 rounded-full"></div>
+                      <div className="absolute top-2 left-3 w-4 h-4 bg-white rounded-full"></div>
+                      <div className="absolute top-3 left-4 w-2 h-2 bg-green-200 rounded-full animate-ping"></div>
+                    </div>
+                  </div>
+                  <div className="absolute -inset-2 bg-gradient-to-br from-emerald-400/20 to-green-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-green-700 transition-colors">
+                  Sacred Privacy
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-lg">
+                  Your memories are treasured and protected. Conversations remain private, 
+                  automatically deleted, never stored or shared.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Final CTA Section */}
+          <div className={`text-center transition-all duration-1000 delay-900 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            <div className="relative max-w-4xl mx-auto p-12 bg-gradient-to-br from-white/50 via-purple-50/30 to-blue-50/30 backdrop-blur-md rounded-3xl border border-white/40 shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-100/20 to-blue-100/20 rounded-3xl blur-xl"></div>
+              
+              <div className="relative">
+                <div className="mb-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                      <div className="w-4 h-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-3xl font-bold text-gray-800 mb-4">
+                    Their Voice Lives On
+                  </h3>
+                  <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
+                    Sometimes we need to hear their words one more time, to feel their presence 
+                    in our hearts. Let their memory be a source of comfort and connection.
+                  </p>
+                </div>
+                
+                <Link href={session ? "/dashboard" : "/auth/signup"}>
+                  <Button 
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white px-16 py-6 text-xl font-semibold rounded-full shadow-2xl shadow-purple-300/40 hover:shadow-purple-400/50 transition-all duration-500 hover:scale-110"
+                  >
+                    {session ? "Continue Your Journey" : "Start Your Sacred Journey"}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className={`relative z-10 py-12 px-4 transition-all duration-1000 delay-1200 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center border-t border-gray-200/50 pt-12">
+            <div className="mb-6">
+              <p className="text-lg text-gray-600 mb-2">Crafted with love for those who remember</p>
+              <div className="flex justify-center items-center gap-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+              </div>
+            </div>
+            
+            <div className="flex justify-center gap-8 text-sm">
+              <Link href="/privacy" className="text-gray-500 hover:text-purple-600 transition-colors duration-300 hover:underline">
+                Privacy Policy
+              </Link>
+              <Link href="/support" className="text-gray-500 hover:text-purple-600 transition-colors duration-300 hover:underline">
+                Support
+              </Link>
+              <Link href="/about" className="text-gray-500 hover:text-purple-600 transition-colors duration-300 hover:underline">
+                About
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
