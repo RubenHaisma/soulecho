@@ -6,8 +6,8 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
+    const userId = (session?.user as any)?.id || (session?.user as any)?.sub;
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const chatSession = await prisma.chatSession.create({
       data: {
         id: sessionId,
-        userId: session.user.id,
+        userId: userId,
         personName,
         selectedPerson,
         messageCount,
@@ -42,6 +42,32 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Sessions API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id || (session?.user as any)?.sub;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { sessionId } = await request.json();
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+    }
+    // Find the session and ensure it belongs to the user
+    const chatSession = await prisma.chatSession.findUnique({
+      where: { id: sessionId }
+    });
+    if (!chatSession || chatSession.userId !== userId) {
+      return NextResponse.json({ error: 'Not found or forbidden' }, { status: 404 });
+    }
+    await prisma.chatSession.delete({ where: { id: sessionId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Session DELETE API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

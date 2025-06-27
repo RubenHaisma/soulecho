@@ -17,7 +17,8 @@ import {
   LogOut,
   Sparkles,
   Clock,
-  Users
+  Users,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
@@ -100,6 +101,39 @@ export default function DashboardPage() {
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
     return formatDate(dateString);
+  };
+
+  // Add delete handlers
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!window.confirm('Are you sure you want to delete this conversation and all its messages?')) return;
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      if (response.ok) {
+        loadDashboardData();
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!window.confirm('Are you sure you want to delete this message?')) return;
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId })
+      });
+      if (response.ok) {
+        loadDashboardData();
+      }
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
   };
 
   if (status === 'loading' || isLoading) {
@@ -323,7 +357,6 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        
                         <div className="flex items-center gap-2">
                           {session.isActive && (
                             <Badge variant="secondary" className="bg-green-100 text-green-700">
@@ -335,6 +368,9 @@ export default function DashboardPage() {
                               Continue
                             </Button>
                           </Link>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSession(session.id)} title="Delete conversation">
+                            <Trash2 className="w-5 h-5 text-red-500" />
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -428,19 +464,24 @@ export default function DashboardPage() {
                           {recentConversations.length > 0 ? (
                             <div className="space-y-1 ml-8">
                               {recentConversations.map((conv) => (
-                                <div key={conv.id} className="text-xs text-gray-600 bg-gray-50/50 p-2 rounded">
-                                  <p className="font-medium">You: {(conv.userMessage || '').substring(0, 30)}...</p>
-                                  <p className="text-gray-500">{(conv.aiResponse || '').substring(0, 30)}...</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs text-gray-400">
-                                      {getTimeAgo(conv.createdAt)}
-                                    </span>
-                                    {conv.contextUsed && (
-                                      <Badge variant="outline" className="text-xs px-1 py-0">
-                                        Context
-                                      </Badge>
-                                    )}
+                                <div key={conv.id} className="text-xs text-gray-600 bg-gray-50/50 p-2 rounded flex items-center justify-between">
+                                  <div>
+                                    <p className="font-medium">You: {(conv.userMessage || '').substring(0, 30)}...</p>
+                                    <p className="text-gray-500">{(conv.aiResponse || '').substring(0, 30)}...</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-xs text-gray-400">
+                                        {getTimeAgo(conv.createdAt)}
+                                      </span>
+                                      {conv.contextUsed && (
+                                        <Badge variant="outline" className="text-xs px-1 py-0">
+                                          Context
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
+                                  <Button variant="ghost" size="icon" onClick={() => handleDeleteConversation(conv.id)} title="Delete message">
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </Button>
                                 </div>
                               ))}
                             </div>

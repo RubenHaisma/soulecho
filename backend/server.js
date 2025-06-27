@@ -708,24 +708,36 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
 }
 
 // Get session data
-app.get('/api/session/:sessionId', (req, res) => {
-  const { sessionId } = req.params;
-  const session = sessions.get(sessionId);
-  
-  if (!session) {
-    return res.status(404).json({ error: 'Session not found' });
-  }
+app.get('/api/session/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Missing sessionId' });
+    }
 
-  // Update last activity
-  session.lastActivity = new Date();
-  
-  res.json({
-    personName: session.personName,
-    messageCount: session.messageCount
-  });
+    const session = sessions.get(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found or expired' });
+    }
+
+    res.json({
+      sessionId,
+      personName: session.personName,
+      selectedPerson: session.selectedPerson,
+      messageCount: session.messageCount || 0,
+      collectionName: session.collectionName,
+      lastActivity: session.lastActivity,
+      detectedLanguages: session.detectedLanguages || []
+    });
+
+  } catch (error) {
+    console.error('❌ Session endpoint error:', error);
+    res.status(500).json({ error: 'Failed to get session information' });
+  }
 });
 
-// Chat endpoint with enhanced RAG
+// Chat endpoint with enhanced RAG and conversation history
 app.post('/api/chat', async (req, res) => {
   const startTime = Date.now();
   
@@ -749,6 +761,19 @@ app.post('/api/chat', async (req, res) => {
 
     // Update last activity
     session.lastActivity = new Date();
+
+    // Get recent conversation history from database
+    let conversationHistory = [];
+    try {
+      const historyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/conversations?sessionId=${sessionId}&limit=10`);
+      if (historyResponse.ok) {
+        const historyData = await historyResponse.json();
+        conversationHistory = historyData.conversations || [];
+        console.log(`📚 Loaded ${conversationHistory.length} recent conversations`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load conversation history:', error.message);
+    }
 
     // Get the collection
     let collection;
@@ -782,7 +807,7 @@ app.post('/api/chat', async (req, res) => {
     try {
       results = await collection.query({
         queryEmbeddings: [userEmbedding],
-        nResults: 8, // Get more results for better context
+        nResults: 6, // Reduced to make room for conversation history
         include: ['documents', 'metadatas', 'distances']
       });
     } catch (error) {
@@ -806,19 +831,50 @@ app.post('/api/chat', async (req, res) => {
         metadata: metadatas[index]
       }))
       .filter(item => item.distance < 0.85) // Slightly more lenient threshold
-      .slice(0, 8) // Get more context for better personalization
+      .slice(0, 4) // Reduced to make room for conversation history
       .map(item => item.content);
 
     console.log(`🔍 Found ${filteredContext.length} relevant messages from ${relevantMessages.length} candidates`);
-    console.log(`📝 Context messages:`, filteredContext.slice(0, 3)); // Debug log
 
-    // Enhanced prompt engineering with better personalization
+    // Build conversation history context
+    const recentConversations = conversationHistory
+      .slice(0, 6) // Last 6 exchanges
+      .map(conv => `You: ${conv.userMessage}\n${session.personName}: ${conv.aiResponse}`)
+      .reverse(); // Most recent first
+
+    // Enhanced prompt engineering with conversation history and better personalization
     const contextText = filteredContext.length > 0 
       ? filteredContext.join('\n\n---\n\n')
       : '';
+    
+    const conversationHistoryText = recentConversations.length > 0
+      ? `RECENT CONVERSATION HISTORY:\n${recentConversations.join('\n\n---\n\n')}\n\n`
+      : '';
+
     // Use detected language(s) in the system prompt
     const langNames = session.detectedLanguages ? session.detectedLanguages.join(', ') : 'the original language';
-    const systemPrompt = `You are ${session.personName}.\n\nCRITICAL: Study the provided messages carefully and respond exactly as ${session.personName} would in a real conversation.\n\n${contextText ? `YOUR ACTUAL MESSAGES (study these to understand your communication style):\n${contextText}\n\nINSTRUCTIONS: \n1. Study these messages to understand your exact communication style, language, expressions, and tone\n2. Respond as ${session.personName} would - using the same language(s) (${langNames}), expressions, and communication patterns\n3. If the conversation switches between languages, do the same.\n4. Be authentic to your actual communication style from these messages\n5. Do NOT use generic responses` : 'Respond based on your relationship and personality.'}\n\nRemember: You ARE ${session.personName}. Respond exactly as you would in a real conversation, using the same language(s) (${langNames}) as in the examples.`;
+    
+    const systemPrompt = `You are ${session.personName}.
+
+CRITICAL: You are having a real conversation with someone you care about. Respond naturally and authentically as ${session.personName} would.
+
+${conversationHistoryText}
+
+${contextText ? `YOUR ACTUAL MESSAGES (study these to understand your communication style):\n${contextText}\n\n` : ''}
+
+INSTRUCTIONS: 
+1. Study the conversation history above to understand the current context and flow
+2. Study your actual messages to understand your exact communication style, language, expressions, and tone
+3. Respond as ${session.personName} would - using the same language(s) (${langNames}), expressions, and communication patterns
+4. If the conversation switches between languages, do the same
+5. Be authentic to your actual communication style from these messages
+6. Reference previous parts of the conversation when relevant
+7. Ask follow-up questions when appropriate
+8. Show genuine interest and engagement
+9. Do NOT use generic responses - be specific and personal
+10. Keep responses natural and conversational length
+
+Remember: You ARE ${session.personName}. Respond exactly as you would in a real conversation, using the same language(s) (${langNames}) as in the examples.`;
 
     // Generate response with optimized parameters
     let completion;
@@ -829,8 +885,8 @@ app.post('/api/chat', async (req, res) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        max_tokens: 150, // Shorter for more natural responses
-        temperature: 0.6, // Lower for more consistent personality
+        max_tokens: 200, // Increased for more natural responses
+        temperature: 0.7, // Slightly higher for more natural variation
         presence_penalty: 0.1,
         frequency_penalty: 0.1,
         top_p: 0.9
@@ -862,7 +918,7 @@ app.post('/api/chat', async (req, res) => {
     const cleanResponse = response
       .trim()
       .replace(/\n{3,}/g, '\n\n') // Limit consecutive newlines
-      .substring(0, 300); // Shorter, more natural length
+      .substring(0, 400); // Increased for more natural length
 
     const processingTime = Date.now() - startTime;
     console.log(`✅ Chat response generated in ${processingTime}ms`);
@@ -924,6 +980,11 @@ app.post('/api/chat', async (req, res) => {
         }
       } else {
         console.log('💾 Conversation saved to database');
+        
+        // Update session message count for better context
+        if (session) {
+          session.messageCount = (session.messageCount || 0) + 1;
+        }
       }
     } catch (error) {
       console.warn('⚠️ Error saving conversation:', error.message);
@@ -933,6 +994,7 @@ app.post('/api/chat', async (req, res) => {
       response: cleanResponse,
       contextUsed: filteredContext.length > 0,
       relevantMessages: filteredContext.length,
+      conversationHistory: conversationHistory.length,
       processingTime: `${processingTime}ms`
     });
 

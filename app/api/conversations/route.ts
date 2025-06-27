@@ -133,4 +133,31 @@ export async function POST(request: NextRequest) {
     console.error('Conversations API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id || (session?.user as any)?.sub;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { conversationId } = await request.json();
+    if (!conversationId) {
+      return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
+    }
+    // Find the conversation and ensure it belongs to the user
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { chatSession: true }
+    });
+    if (!conversation || conversation.chatSession.userId !== userId) {
+      return NextResponse.json({ error: 'Not found or forbidden' }, { status: 404 });
+    }
+    await prisma.conversation.delete({ where: { id: conversationId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Conversation DELETE API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 } 

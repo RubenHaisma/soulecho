@@ -14,6 +14,13 @@ interface Message {
   timestamp: Date;
 }
 
+interface Conversation {
+  id: string;
+  userMessage: string;
+  aiResponse: string;
+  createdAt: string;
+}
+
 interface TypingIndicatorProps {
   show: boolean;
   personName: string;
@@ -61,6 +68,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -72,11 +80,56 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Focus input on mount
     inputRef.current?.focus();
     
-    // Fetch dynamic welcome message
-    if (messages.length === 0) {
+    // Load conversation history first, then fetch welcome message if needed
+    loadConversationHistory();
+  }, [sessionId]);
+
+  const loadConversationHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      
+      const response = await fetch(`/api/conversations?sessionId=${sessionId}&limit=50`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const conversations = data.conversations || [];
+        
+        if (conversations.length > 0) {
+          // Convert conversations to messages
+          const historyMessages: Message[] = (conversations as Conversation[])
+            .reverse() // Show oldest first
+            .flatMap((conv: Conversation) => [
+              {
+                id: `user-${conv.id}`,
+                text: conv.userMessage,
+                sender: 'user' as const,
+                timestamp: new Date(conv.createdAt)
+              },
+              {
+                id: `ai-${conv.id}`,
+                text: conv.aiResponse,
+                sender: 'ai' as const,
+                timestamp: new Date(conv.createdAt)
+              }
+            ]);
+          
+          setMessages(historyMessages);
+          console.log(`📚 Loaded ${conversations.length} previous conversations`);
+        } else {
+          // No history, fetch welcome message
+          fetchWelcomeMessage();
+        }
+      } else {
+        console.warn('Failed to load conversation history, fetching welcome message');
+        fetchWelcomeMessage();
+      }
+    } catch (error) {
+      console.error('Failed to load conversation history:', error);
       fetchWelcomeMessage();
+    } finally {
+      setIsLoadingHistory(false);
     }
-  }, []);
+  };
 
   const fetchWelcomeMessage = async () => {
     try {
@@ -212,6 +265,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  if (isLoadingHistory) {
+    return (
+      <div className={`flex flex-col h-full ${className}`}>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="flex gap-1 justify-center mb-4">
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+            <p className="text-gray-500">Loading conversation history...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Messages Area */}
@@ -294,6 +364,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="flex items-center justify-center mt-3 gap-2 text-xs text-gray-500">
           <Heart className="w-3 h-3 fill-current text-purple-400" />
           <span>Messages are generated with care and empathy</span>
+          {messages.length > 1 && (
+            <span className="ml-2 text-purple-400">
+              • {Math.floor(messages.length / 2)} previous conversations
+            </span>
+          )}
         </div>
       </div>
     </div>

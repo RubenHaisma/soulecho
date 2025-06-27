@@ -95,19 +95,51 @@ export async function POST(request: NextRequest) {
     const contextText = contextMessages.length > 0 
       ? `\n\nRECENT CONVERSATION CONTEXT:\n${contextMessages.join('\n\n---\n\n')}`
       : '';
+    
+    const recentConversationsText = (chatSession.conversations || []).length > 0
+      ? `\n\nRECENT CONVERSATION HISTORY:\n${(chatSession.conversations || [])
+          .slice(0, 4)
+          .map((conv: { userMessage: string; aiResponse: string }) => `You: ${conv.userMessage}\n${chatSession.personName}: ${conv.aiResponse}`)
+          .reverse()
+          .join('\n\n---\n\n')}`
+      : '';
+    
     const langNames = detectedLanguages.length > 0 ? detectedLanguages.join(', ') : 'the original language';
-    const systemPrompt = `You are ${chatSession.personName}.\n\nGenerate a fluent, natural, advanced first message for a real WhatsApp conversation, in the same language(s) as the training data (${langNames}).\n\n${contextText ? `Based on these real messages, continue the conversation as if you are picking up right where you left off. Do NOT just greet, but make it a real, flowing, personal message that fits the style and language(s) in the context.` : 'Create a warm, personal, and natural first message that fits the relationship and language.'}\n\nINSTRUCTIONS:\n1. Be authentic to ${chatSession.personName}'s communication style\n2. Use the same language(s) (${langNames}) and code-switch if needed\n3. Make it feel like a real, ongoing conversation, not just a greeting\n4. Reference the relationship or recent topics if context is available\n5. Keep it concise (1-2 sentences)\n6. Use the same language patterns and expressions as in the context\n\nRemember: You ARE ${chatSession.personName}. Respond exactly as you would in a real conversation, in the correct language(s).`;
+    
+    const systemPrompt = `You are ${chatSession.personName}.
+
+CRITICAL: You are continuing a real conversation with someone you care about. This is NOT a greeting - it's picking up where you left off.
+
+${recentConversationsText}
+
+${contextText ? `YOUR ACTUAL MESSAGES (study these to understand your communication style):\n${contextText}\n\n` : ''}
+
+INSTRUCTIONS:
+1. Study the conversation history above to understand the current context and flow
+2. Study your actual messages to understand your exact communication style, language, expressions, and tone
+3. Respond as ${chatSession.personName} would - using the same language(s) (${langNames}), expressions, and communication patterns
+4. If the conversation switches between languages, do the same
+5. Be authentic to your actual communication style from these messages
+6. Reference previous parts of the conversation when relevant
+7. Ask follow-up questions when appropriate
+8. Show genuine interest and engagement
+9. Do NOT use generic responses - be specific and personal
+10. Keep responses natural and conversational length
+11. Make it feel like you're continuing a real conversation, not starting a new one
+
+Remember: You ARE ${chatSession.personName}. Respond exactly as you would in a real conversation, using the same language(s) (${langNames}) as in the examples.`;
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: 'Continue the conversation naturally as the first message.' }
+        { role: 'user', content: 'Continue the conversation naturally as if you\'re picking up where you left off.' }
       ],
-      max_tokens: 100,
-      temperature: 0.8,
-      presence_penalty: 0.2,
+      max_tokens: 150,
+      temperature: 0.7,
+      presence_penalty: 0.1,
       frequency_penalty: 0.1,
-      top_p: 0.95
+      top_p: 0.9
     });
     const welcomeMessage = completion.choices[0]?.message?.content?.trim() || 
       `Hey! It's so good to hear from you again. What's new with you?`;
