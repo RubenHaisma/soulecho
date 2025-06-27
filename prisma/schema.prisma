@@ -80,6 +80,22 @@ model ChatSession {
   isActive     Boolean  @default(true)
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
   
   @@map(name: "chat_sessions")
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  chatSessionId String
+  userMessage   String   @db.Text
+  aiResponse    String   @db.Text
+  contextUsed   Boolean  @default(false)
+  relevantMessages Int    @default(0)
+  processingTime String?
+  createdAt     DateTime @default(now())
+  
+  chatSession ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  
+  @@map(name: "conversations")
 }

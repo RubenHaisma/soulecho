@@ -53,7 +53,36 @@ export default function ChatPage() {
         const data = await response.json();
         setSessionData(data);
         
-        // Add a welcome message
+        // Fetch dynamic welcome message
+        await fetchWelcomeMessage();
+      }
+    } catch (error) {
+      console.error('Failed to load session:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchWelcomeMessage = async () => {
+    try {
+      const response = await fetch('/api/welcome', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages([{
+          id: '1',
+          text: data.welcomeMessage,
+          sender: 'ai',
+          timestamp: new Date()
+        }]);
+      } else {
+        // Fallback to default message
         setMessages([{
           id: '1',
           text: `Hello... it's so good to hear from you again. I've missed our conversations. What's on your mind?`,
@@ -62,9 +91,14 @@ export default function ChatPage() {
         }]);
       }
     } catch (error) {
-      console.error('Failed to load session:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to fetch welcome message:', error);
+      // Fallback to default message
+      setMessages([{
+        id: '1',
+        text: `Hello... it's so good to hear from you again. I've missed our conversations. What's on your mind?`,
+        sender: 'ai',
+        timestamp: new Date()
+      }]);
     }
   };
 

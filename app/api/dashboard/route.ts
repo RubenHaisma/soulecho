@@ -11,11 +11,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's chat sessions
+    // Get user's chat sessions with conversation counts
     const chatSessions = await prisma.chatSession.findMany({
       where: {
         userId: session.user.id,
         isActive: true
+      },
+      include: {
+        conversations: {
+          select: {
+            id: true,
+            createdAt: true,
+            contextUsed: true,
+            relevantMessages: true,
+            processingTime: true
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
       },
       orderBy: {
         lastActivity: 'desc'
@@ -32,9 +46,22 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Calculate real statistics from actual conversations
+    const totalConversations = chatSessions.reduce((sum, session) => sum + session.conversations.length, 0);
+    const conversationsWithContext = chatSessions.reduce((sum, session) => 
+      sum + session.conversations.filter(conv => conv.contextUsed).length, 0
+    );
+    const totalRelevantMessages = chatSessions.reduce((sum, session) => 
+      sum + session.conversations.reduce((convSum, conv) => convSum + conv.relevantMessages, 0), 0
+    );
+
     const stats = {
       totalSessions: chatSessions.length,
-      totalMessages: chatSessions.reduce((sum, session) => sum + session.messageCount, 0),
+      totalMessages: totalConversations,
+      totalConversations: totalConversations,
+      conversationsWithContext: conversationsWithContext,
+      totalRelevantMessages: totalRelevantMessages,
+      contextUsageRate: totalConversations > 0 ? Math.round((conversationsWithContext / totalConversations) * 100) : 0,
       subscriptionStatus: user?.stripeSubscriptionId ? 'premium' : 'free'
     };
 

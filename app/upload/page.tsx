@@ -11,24 +11,34 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Upload, FileText, User, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
 
 interface ParsedData {
   totalMessages: number;
   dateRange: string;
   participants: string[];
   preview: string[];
+  successRate?: number;
+  skippedSystemMessages?: number;
 }
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [totalMessages, setTotalMessages] = useState(0);
+  const [processedMessages, setProcessedMessages] = useState(0);
+  const [canStartChatting, setCanStartChatting] = useState(false);
+  const [chatReadyProgress, setChatReadyProgress] = useState(0);
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
   const [selectedPerson, setSelectedPerson] = useState('');
   const [personName, setPersonName] = useState('');
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState('');
   const router = useRouter();
+  const session = useSession() as { data: (Session & { user: { id?: string; sub?: string; name?: string | null; email?: string | null; image?: string | null } }) | null, status: string };
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -44,37 +54,136 @@ export default function UploadPage() {
 
   const parseWhatsAppFile = async (file: File): Promise<ParsedData> => {
     const text = await file.text();
-    const lines = text.split('\n').filter(line => line.trim());
     
-    // Basic WhatsApp message pattern: [Date, Time] Contact: Message
-    const messagePattern = /^\[\d{1,2}\/\d{1,2}\/\d{2,4}, \d{1,2}:\d{2}:\d{2}\s?[AP]?M?\]\s*([^:]+):\s*(.+)$/;
+    // Validate file content first
+    if (!text || text.trim().length === 0) {
+      throw new Error('File appears to be empty. Please select a valid WhatsApp chat export.');
+    }
     
-    const messages: { sender: string; content: string; date: string }[] = [];
+    const lines = text.split(/\r?\n/).filter(line => line.trim());
+    
+    if (lines.length < 5) {
+      throw new Error('File seems too short to be a WhatsApp export. Please ensure you exported the full chat history.');
+    }
+    
+    // Multiple patterns to handle different WhatsApp export formats
+    const patterns = [
+      /^\[(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}:\d{2})\s?([AP]?M?)\]\s*([^:]+):\s*(.+)$/,
+      /^\[(\d{1,2}\/\d{1,2}\/\d{2}), (\d{1,2}:\d{2}:\d{2})\s([AP]M)\]\s*([^:]+):\s*(.+)$/,
+      /^(\d{1,2}\/\d{1,2}\/\d{4}), (\d{1,2}:\d{2})\s?-\s*([^:]+):\s*(.+)$/,
+      /^\[(\d{1,2}\.\d{1,2}\.\d{2,4}), (\d{1,2}:\d{2}:\d{2})\]\s*([^:]+):\s*(.+)$/
+    ];
+    
+    const systemMessages = [
+      '<Media omitted>', 'image omitted', 'video omitted', 'audio omitted',
+      'Messages and calls are end-to-end encrypted', 'This message was deleted',
+      'document omitted', 'GIF omitted', 'sticker omitted', 'Contact card omitted'
+    ];
+    
+    const messages: { sender: string; content: string; date: string; timestamp: string }[] = [];
     const participants = new Set<string>();
+    let successCount = 0;
+    let skippedSystemMessages = 0;
     
-    lines.forEach(line => {
-      const match = line.match(messagePattern);
+    lines.forEach((line, index) => {
+      let match = null;
+      let patternUsed = -1;
+      
+      // Try each pattern
+      for (let i = 0; i < patterns.length; i++) {
+        match = line.match(patterns[i]);
+        if (match) {
+          patternUsed = i;
+          break;
+        }
+      }
+      
       if (match) {
-        const [, sender, content] = match;
+        let sender: string;
+        let content: string;
+        let dateStr: string;
+        let timeStr: string;
+        
+        // Extract based on pattern
+        switch (patternUsed) {
+          case 0: // [DD/MM/YYYY, HH:MM:SS] format
+            [, dateStr, timeStr, , sender, content] = match;
+            break;
+          case 1: // [DD/MM/YY, HH:MM:SS AM/PM] format
+            [, dateStr, timeStr, , sender, content] = match;
+            break;
+          case 2: // DD/MM/YYYY, HH:MM - format
+            [, dateStr, timeStr, sender, content] = match;
+            break;
+          case 3: // [DD.MM.YY, HH:MM:SS] format
+            [, dateStr, timeStr, sender, content] = match;
+            dateStr = dateStr.replace(/\./g, '/');
+            break;
+          default:
+            return;
+        }
+        
         const cleanSender = sender.trim();
-        participants.add(cleanSender);
-        messages.push({ sender: cleanSender, content: content.trim(), date: line.substring(1, line.indexOf(']')) });
+        const cleanContent = content.trim();
+        
+        // Check if it's a system message
+        const isSystemMessage = systemMessages.some(sysMsg => 
+          cleanContent.toLowerCase().includes(sysMsg.toLowerCase())
+        );
+        
+        if (isSystemMessage) {
+          skippedSystemMessages++;
+          return;
+        }
+        
+        if (cleanContent.length > 2) { // Filter out very short messages
+          participants.add(cleanSender);
+          messages.push({ 
+            sender: cleanSender, 
+            content: cleanContent, 
+            date: dateStr,
+            timestamp: `${dateStr}, ${timeStr}`
+          });
+          successCount++;
+        }
       }
     });
 
     if (messages.length === 0) {
-      throw new Error('No valid WhatsApp messages found. Please check your file format.');
+      throw new Error(`No valid WhatsApp messages found. 
+        
+Parsed ${lines.length} lines but found no valid messages.
+        
+Please ensure you:
+• Exported as "Without Media" from WhatsApp
+• Selected the complete chat history
+• File contains lines like: [DD/MM/YYYY, HH:MM:SS] Name: Message
+        
+Supported formats:
+• [25/12/2023, 14:30:22] John: Hello world
+• 25/12/2023, 14:30 - John: Hello world
+• [25.12.23, 14:30:22] John: Hello world`);
     }
+
+    // Sort messages chronologically
+    messages.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
     const dateRange = messages.length > 0 ? 
       `${messages[0].date} - ${messages[messages.length - 1].date}` : 
       'Unknown';
+      
+    const successRate = Math.round((successCount / lines.length) * 100);
 
     return {
       totalMessages: messages.length,
       dateRange,
-      participants: Array.from(participants),
-      preview: messages.slice(0, 5).map(m => `${m.sender}: ${m.content.substring(0, 100)}${m.content.length > 100 ? '...' : ''}`)
+      participants: Array.from(participants).sort(),
+      preview: messages
+        .filter(m => m.content.length > 15) // Better previews with longer messages
+        .slice(0, 5)
+        .map(m => `${m.sender}: ${m.content.substring(0, 80)}${m.content.length > 80 ? '...' : ''}`),
+      successRate,
+      skippedSystemMessages
     };
   };
 
@@ -109,12 +218,20 @@ export default function UploadPage() {
       return;
     }
 
+    if (!((session.data?.user as any)?.id || (session.data?.user as any)?.sub)) {
+      setError('Please sign in to create a session');
+      return;
+    }
+
     setUploading(true);
+    setProgress(0);
+    
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('selectedPerson', selectedPerson);
       formData.append('personName', personName.trim());
+      formData.append('userId', (session.data?.user as any)?.id || (session.data?.user as any)?.sub);
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -122,20 +239,89 @@ export default function UploadPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create session');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create session');
       }
 
       const data = await response.json();
-      setSessionId(data.sessionId);
+      console.log('Upload response:', data); // Debug log
       
-      // Redirect to chat with session ID
-      router.push(`/chat/${data.sessionId}`);
+      // Connect to real-time progress stream
+      if (data.uploadId && data.sessionId) {
+        const progressUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/progress/${data.uploadId}`;
+        console.log('Connecting to progress stream:', progressUrl); // Debug log
+        
+        const eventSource = new EventSource(progressUrl);
+        
+        eventSource.onopen = () => {
+          console.log('Progress stream connected'); // Debug log
+        };
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const progressData = JSON.parse(event.data);
+            console.log('Progress update:', progressData); // Debug log
+            setProgress(progressData.progress);
+            setProgressMessage(progressData.message || '');
+            setTotalMessages(progressData.total || 0);
+            setProcessedMessages(progressData.processed || 0);
+            
+            // Calculate chat readiness (can start chatting when 10% of messages are processed or minimum 100 messages)
+            const total = progressData.total || 0;
+            const processed = progressData.processed || 0;
+            const minMessagesForChat = Math.min(Math.max(Math.floor(total * 0.1), 100), 500); // 10% or 100-500 messages
+            const chatReady = processed >= minMessagesForChat && progressData.stage === 'analyzing';
+            const chatProgressPercent = total > 0 ? Math.min((processed / minMessagesForChat) * 100, 100) : 0;
+            
+            setCanStartChatting(chatReady);
+            setChatReadyProgress(chatProgressPercent);
+            
+            // Handle different stages
+            if (progressData.stage === 'complete') {
+              setCanStartChatting(true);
+              setChatReadyProgress(100);
+              eventSource.close();
+              setSessionId(data.sessionId);
+              // Keep uploading state true until we redirect
+              setTimeout(() => {
+                setUploading(false);
+                router.push(`/chat/${data.sessionId}`);
+              }, 2000); // Give user time to see completion
+            } else if (progressData.stage === 'error') {
+              eventSource.close();
+              setError(progressData.message || 'Processing failed');
+              setUploading(false);
+            }
+          } catch (e) {
+            console.warn('Failed to parse progress data:', e);
+          }
+        };
+        
+        eventSource.onerror = (error) => {
+          console.warn('Progress stream error:', error);
+          console.log('EventSource readyState:', eventSource.readyState); // Debug log
+          eventSource.close();
+          setError('Connection to processing server lost. Please try again.');
+          setUploading(false);
+        };
+        
+        // Cleanup function for component unmount
+        const cleanup = () => eventSource.close();
+        
+        // Store cleanup function
+        window.addEventListener('beforeunload', cleanup);
+        
+        return cleanup;
+      } else {
+        setError('Failed to start processing. Please try again.');
+        setUploading(false);
+      }
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create chat session');
-    } finally {
-      setUploading(false);
+      setUploading(false); // Only set to false on error
     }
+    // Don't set uploading to false in finally - let the progress stream handle it
   };
 
   return (
@@ -214,12 +400,125 @@ export default function UploadPage() {
                 </Button>
               )}
 
-              {uploading && (
-                <div className="space-y-2">
-                  <Progress value={progress} className="h-2" />
-                  <p className="text-sm text-gray-600 text-center">
-                    {progress < 50 ? 'Parsing messages...' : 'Analyzing conversation...'}
-                  </p>
+                            {uploading && (
+                <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+                  {/* Main Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700">
+                        {progressMessage || 
+                         (progress < 25 ? 'Reading file...' : 
+                          progress < 50 ? 'Parsing messages...' : 
+                          progress < 75 ? 'Analyzing conversation...' : 
+                           'Finalizing...')}
+                      </span>
+                      <span className="text-sm font-medium text-purple-600">{Math.round(progress)}%</span>
+                    </div>
+                    <div className="relative">
+                      <Progress value={progress} className="h-3 bg-gray-200" />
+                      <div className="absolute inset-0 h-3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full opacity-20 animate-pulse" />
+                    </div>
+                  </div>
+
+                  {/* Chat Readiness Indicator */}
+                  {totalMessages > 0 && (
+                    <div className="space-y-2 p-3 bg-white/60 rounded-lg border">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${canStartChatting ? 'bg-green-500 animate-pulse' : 'bg-orange-500'}`} />
+                          <span className="text-sm font-medium text-gray-700">
+                            {canStartChatting ? `Ready to start chatting with ${personName || 'your person'}!` : `Preparing chat with ${personName || 'your person'}...`}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">{Math.round(chatReadyProgress)}%</span>
+                      </div>
+                      <div className="relative">
+                        <Progress value={chatReadyProgress} className="h-2" />
+                        <div className={`absolute inset-0 h-2 rounded-full ${canStartChatting ? 'bg-green-400' : 'bg-orange-400'} opacity-30`} />
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        {canStartChatting 
+                          ? `${personName || 'They'} have enough memories to chat meaningfully with you!`
+                          : `Processing memories... (${processedMessages.toLocaleString()} analyzed)`
+                        }
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Start Chatting Button */}
+                  {canStartChatting && sessionId && (
+                    <div className="pt-2">
+                      <Button
+                        onClick={() => router.push(`/chat/${sessionId}`)}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-3 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-105"
+                      >
+                        🎉 Start Chatting with {personName || 'your person'}
+                      </Button>
+                      <p className="text-xs text-center text-gray-500 mt-2">
+                        You can start now! Processing will continue in the background.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Stage Indicators */}
+                  <div className="flex justify-between items-center text-xs">
+                    <div className={`flex items-center gap-1 transition-colors ${progress >= 25 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {progress >= 25 ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : (
+                        <div className="w-3 h-3 border-2 border-current rounded-full animate-spin" />
+                      )}
+                      <span>File Reading</span>
+                    </div>
+                    <div className={`flex items-center gap-1 transition-colors ${progress >= 50 ? 'text-green-600' : progress >= 25 ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {progress >= 50 ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : progress >= 25 ? (
+                        <div className="w-3 h-3 border-2 border-current rounded-full animate-spin" />
+                      ) : (
+                        <div className="w-3 h-3 border-2 border-gray-300 rounded-full" />
+                      )}
+                      <span>Message Parsing</span>
+                    </div>
+                    <div className={`flex items-center gap-1 transition-colors ${progress >= 75 ? 'text-green-600' : progress >= 50 ? 'text-purple-600' : 'text-gray-400'}`}>
+                      {progress >= 75 ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : progress >= 50 ? (
+                        <div className="w-3 h-3 border-2 border-current rounded-full animate-spin" />
+                      ) : (
+                        <div className="w-3 h-3 border-2 border-gray-300 rounded-full" />
+                      )}
+                      <span>Analysis</span>
+                    </div>
+                    <div className={`flex items-center gap-1 transition-colors ${progress >= 100 ? 'text-green-600' : progress >= 75 ? 'text-pink-600' : 'text-gray-400'}`}>
+                      {progress >= 100 ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : progress >= 75 ? (
+                        <div className="w-3 h-3 border-2 border-current rounded-full animate-spin" />
+                      ) : (
+                        <div className="w-3 h-3 border-2 border-gray-300 rounded-full" />
+                      )}
+                      <span>Complete</span>
+                    </div>
+                  </div>
+
+                  {/* Processing Details */}
+                  <div className="text-center space-y-1">
+                    <p className="text-sm text-gray-600">
+                      {progressMessage || 
+                       (progress < 25 ? 'Reading and validating your chat file...' : 
+                        progress < 50 ? 'Extracting messages and timestamps...' : 
+                        progress < 75 ? 'Understanding conversation patterns and context...' : 
+                        progress < 100 ? 'Preparing your personalized chat experience...' :
+                        'Ready to chat!')}
+                    </p>
+                    {processedMessages > 0 && totalMessages > 0 && (
+                      <p className="text-xs text-purple-600 font-medium">
+                        {processedMessages.toLocaleString()} / {totalMessages.toLocaleString()} messages 
+                        ({Math.round((processedMessages / totalMessages) * 100)}%)
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>

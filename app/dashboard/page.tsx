@@ -29,6 +29,15 @@ interface ChatSession {
   createdAt: string;
   lastActivity: string;
   isActive: boolean;
+  conversations: {
+    id: string;
+    createdAt: string;
+    contextUsed: boolean;
+    relevantMessages: number;
+    processingTime: string | null;
+    userMessage: string;
+    aiResponse: string;
+  }[];
 }
 
 export default function DashboardPage() {
@@ -39,6 +48,10 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalSessions: 0,
     totalMessages: 0,
+    totalConversations: 0,
+    conversationsWithContext: 0,
+    totalRelevantMessages: 0,
+    contextUsageRate: 0,
     subscriptionStatus: 'free'
   });
 
@@ -174,7 +187,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -193,11 +206,27 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Messages Exchanged</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.totalMessages}</p>
+                  <p className="text-sm font-medium text-gray-600">Total Messages</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.totalConversations}</p>
+                  <p className="text-xs text-gray-500 mt-1">Real conversations stored</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Context Usage</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.contextUsageRate}%</p>
+                  <p className="text-xs text-gray-500 mt-1">{stats.conversationsWithContext}/{stats.totalConversations} used context</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -217,7 +246,7 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center">
                   <Crown className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -279,12 +308,18 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-4 text-sm text-gray-600">
                               <span className="flex items-center gap-1">
                                 <MessageCircle className="w-3 h-3" />
-                                {session.messageCount} messages
+                                {session.conversations.length} conversations
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {getTimeAgo(session.lastActivity)}
                               </span>
+                              {session.conversations.length > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3" />
+                                  {Math.round((session.conversations.filter(c => c.contextUsed).length / session.conversations.length) * 100)}% context
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -366,6 +401,58 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-gray-600">No recent activity</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recent Conversations */}
+            <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Conversations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chatSessions.length > 0 ? (
+                  <div className="space-y-3">
+                    {chatSessions.slice(0, 3).map((session) => {
+                      const recentConversations = session.conversations.slice(0, 2);
+                      return (
+                        <div key={session.id} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="w-6 h-6 bg-gradient-to-br from-purple-400 to-blue-400">
+                              <AvatarFallback className="text-white text-xs">
+                                {session.personName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <p className="text-sm font-medium text-gray-900">{session.personName}</p>
+                          </div>
+                          {recentConversations.length > 0 ? (
+                            <div className="space-y-1 ml-8">
+                              {recentConversations.map((conv) => (
+                                <div key={conv.id} className="text-xs text-gray-600 bg-gray-50/50 p-2 rounded">
+                                  <p className="font-medium">You: {(conv.userMessage || '').substring(0, 30)}...</p>
+                                  <p className="text-gray-500">{(conv.aiResponse || '').substring(0, 30)}...</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-gray-400">
+                                      {getTimeAgo(conv.createdAt)}
+                                    </span>
+                                    {conv.contextUsed && (
+                                      <Badge variant="outline" className="text-xs px-1 py-0">
+                                        Context
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500 ml-8">No conversations yet</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">No conversations yet</p>
                 )}
               </CardContent>
             </Card>
