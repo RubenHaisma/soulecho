@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -21,21 +21,25 @@ export async function POST(request: NextRequest) {
     // Get or create Stripe customer
     let customer;
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { stripeCustomerId: true, email: true, name: true }
+      where: { email: session.user.email },
+      select: { id: true, stripeCustomerId: true, email: true, name: true }
     });
 
-    if (user?.stripeCustomerId) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (user.stripeCustomerId) {
       customer = await stripe.customers.retrieve(user.stripeCustomerId);
     } else {
       customer = await stripe.customers.create({
-        email: user?.email || session.user.email!,
-        name: user?.name || session.user.name || undefined,
+        email: user.email,
+        name: user.name || undefined,
       });
 
       // Update user with Stripe customer ID
       await prisma.user.update({
-        where: { id: session.user.id },
+        where: { id: user.id },
         data: { stripeCustomerId: customer.id }
       });
     }
@@ -51,12 +55,12 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/pricing?canceled=true`,
-      client_reference_id: session.user.id,
+      success_url: `${process.env.NEXTAUTH_URL}/dashboard/subscription?success=true`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/subscription?canceled=true`,
+      client_reference_id: user.id,
     });
 
-    return NextResponse.json({ sessionId: checkoutSession.id });
+    return NextResponse.json({ url: checkoutSession.url });
 
   } catch (error) {
     console.error('Stripe checkout error:', error);

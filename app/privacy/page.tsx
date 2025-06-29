@@ -31,8 +31,8 @@ export default function PrivacyPage() {
             </CardHeader>
             <CardContent className="prose prose-gray max-w-none">
               <p className="text-lg text-gray-700 mb-4">
-                EchoSoul was built with your privacy as the foundation. We understand that the conversations 
-                you're sharing are deeply personal and irreplaceable memories.
+                Talkers was built with your privacy as the foundation. We understand that the conversations 
+                you&apos;re sharing are deeply personal and irreplaceable memories.
               </p>
               <div className="bg-green-50 border-l-4 border-green-400 p-4 my-6">
                 <p className="text-green-800 font-medium">
@@ -171,7 +171,7 @@ export default function PrivacyPage() {
 
           <div className="text-center text-sm text-gray-500">
             <p>Last updated: {new Date().toLocaleDateString()}</p>
-            <p className="mt-2">EchoSoul is designed to honor your memories while protecting your privacy.</p>
+            <p className="mt-2">Talkers is designed to honor your memories while protecting your privacy.</p>
           </div>
         </div>
       </div>

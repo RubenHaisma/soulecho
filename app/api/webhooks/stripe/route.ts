@@ -36,9 +36,12 @@ export async function POST(request: NextRequest) {
             await prisma.user.update({
               where: { id: userId },
               data: {
+                stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
                 stripePriceId: subscription.items.data[0].price.id,
                 stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                subscriptionStatus: 'premium',
+                isTrialActive: false
               },
             });
           } else if (session.mode === 'payment') {
@@ -46,8 +49,11 @@ export async function POST(request: NextRequest) {
             await prisma.user.update({
               where: { id: userId },
               data: {
+                stripeCustomerId: session.customer as string,
                 stripePriceId: 'lifetime',
                 stripeCurrentPeriodEnd: new Date('2099-12-31'), // Far future date for lifetime
+                subscriptionStatus: 'premium',
+                isTrialActive: false
               },
             });
           }
@@ -67,6 +73,7 @@ export async function POST(request: NextRequest) {
             where: { stripeCustomerId: subscription.customer as string },
             data: {
               stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              subscriptionStatus: subscription.cancel_at_period_end ? 'canceled' : 'premium'
             },
           });
         }
@@ -82,6 +89,7 @@ export async function POST(request: NextRequest) {
             stripeSubscriptionId: null,
             stripePriceId: null,
             stripeCurrentPeriodEnd: null,
+            subscriptionStatus: 'free'
           },
         });
         break;

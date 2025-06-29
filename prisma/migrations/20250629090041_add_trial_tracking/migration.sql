@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "isTrialActive" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "trialChatsUsed" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "trialEndDate" TIMESTAMP(3),
+ADD COLUMN     "trialStartDate" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;

@@ -60,7 +60,7 @@ export default function SignInPage() {
               </div>
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent">
-              EchoSoul
+              Talkers
             </h1>
           </div>
           

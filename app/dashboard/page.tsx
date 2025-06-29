@@ -18,10 +18,19 @@ import {
   Sparkles,
   Clock,
   Users,
-  Trash2
+  Trash2,
+  Heart,
+  BarChart3,
+  CreditCard,
+  Activity,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import { BirthdayNotification } from '@/components/birthday-notification';
+import { DashboardNav } from '@/components/dashboard-nav';
+import { TrialStatus } from '@/components/trial-status';
+import { TrialExperienceSummary } from '@/components/trial-experience-summary';
 
 interface ChatSession {
   id: string;
@@ -53,7 +62,11 @@ export default function DashboardPage() {
     conversationsWithContext: 0,
     totalRelevantMessages: 0,
     contextUsageRate: 0,
-    subscriptionStatus: 'free'
+    subscriptionStatus: 'trial',
+    planType: 'trial',
+    isTrialActive: true,
+    trialEndDate: null as string | null,
+    daysLeft: 3
   });
 
   useEffect(() => {
@@ -164,7 +177,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent">
-                  EchoSoul
+                  Talkers
                 </h1>
               </Link>
               
@@ -175,7 +188,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              {stats.subscriptionStatus === 'free' && (
+              {stats.subscriptionStatus !== 'premium' && (
                 <Link href="/pricing">
                   <Button variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
                     <Crown className="w-4 h-4 mr-2" />
@@ -218,6 +231,30 @@ export default function DashboardPage() {
           <p className="text-xl text-gray-600">
             Your sacred conversations await
           </p>
+        </div>
+
+        {/* Birthday Notification */}
+        <BirthdayNotification />
+
+        {/* Trial Status */}
+        {stats.subscriptionStatus !== 'premium' && <TrialStatus className="mb-6" />}
+
+        {/* Trial Experience Summary */}
+        {stats.subscriptionStatus !== 'premium' && (
+          <div className="mb-6">
+            <TrialExperienceSummary 
+              trialProgress={stats.daysLeft ? (3 - stats.daysLeft) / 3 : 1}
+              qualityLevel={stats.isTrialActive ? Math.max(40, 100 - (3 - stats.daysLeft) * 20) : 10}
+              daysLeft={stats.daysLeft}
+              conversationsUsed={stats.totalConversations}
+              isTrialActive={stats.isTrialActive}
+            />
+          </div>
+        )}
+
+        {/* Dashboard Navigation */}
+        <div className="mb-8">
+          <DashboardNav />
         </div>
 
         {/* Stats Cards */}
@@ -275,7 +312,7 @@ export default function DashboardPage() {
                     <Badge variant={stats.subscriptionStatus === 'premium' ? 'default' : 'secondary'}>
                       {stats.subscriptionStatus === 'premium' ? 'Premium' : 'Free'}
                     </Badge>
-                    {stats.subscriptionStatus === 'free' && (
+                    {stats.subscriptionStatus !== 'premium' && (
                       <span className="text-sm text-gray-500">3/5 used</span>
                     )}
                   </div>
@@ -284,7 +321,7 @@ export default function DashboardPage() {
                   <Crown className="w-6 h-6 text-white" />
                 </div>
               </div>
-              {stats.subscriptionStatus === 'free' && (
+              {stats.subscriptionStatus !== 'premium' && (
                 <div className="mt-3">
                   <Progress value={60} className="h-2" />
                 </div>
@@ -394,10 +431,34 @@ export default function DashboardPage() {
                     New Conversation
                   </Button>
                 </Link>
-                <Link href="/pricing">
+                <Link href="/memories">
                   <Button variant="outline" className="w-full justify-start">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Upgrade Plan
+                    <Heart className="w-4 h-4 mr-2" />
+                    Memory Timeline
+                  </Button>
+                </Link>
+                <Link href="/dashboard/analytics">
+                  <Button variant="outline" className="w-full justify-start">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Analytics
+                  </Button>
+                </Link>
+                <Link href="/dashboard/subscription">
+                  <Button variant="outline" className="w-full justify-start">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Subscription
+                  </Button>
+                </Link>
+                <Link href="/dashboard/billing">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Activity className="w-4 h-4 mr-2" />
+                    Billing History
+                  </Button>
+                </Link>
+                <Link href="/dashboard/usage">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Usage & Limits
                   </Button>
                 </Link>
                 <Link href="/settings">
@@ -406,6 +467,14 @@ export default function DashboardPage() {
                     Settings
                   </Button>
                 </Link>
+                {stats.subscriptionStatus !== 'premium' && (
+                  <Link href="/pricing">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Crown className="w-4 h-4 mr-2" />
+                      Upgrade Plan
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
 

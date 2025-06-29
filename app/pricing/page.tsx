@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Check, Crown, Sparkles, Zap } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Sparkles, Zap, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -14,6 +14,18 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 export default function PricingPage() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [isCanceled, setIsCanceled] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState(null);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const handleSubscribe = async (priceId: string) => {
     if (!session) {
@@ -48,22 +60,112 @@ export default function PricingPage() {
     }
   };
 
+  const handleUpgrade = async () => {
+    if (!session) {
+      window.location.href = '/auth/signin';
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch('/api/upgrade-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: session.user.id,
+        }),
+      });
+
+      const { newPlan } = await response.json();
+      setIsPremium(true);
+      setCurrentPlan(newPlan);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!session) {
+      window.location.href = '/auth/signin';
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: session.user.id,
+        }),
+      });
+
+      const { canceled } = await response.json();
+      setIsCanceled(canceled);
+      setIsPremium(false);
+      setCurrentPlan(null);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    if (!session) {
+      window.location.href = '/auth/signin';
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch('/api/reactivate-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: session.user.id,
+        }),
+      });
+
+      const { reactivated } = await response.json();
+      setIsCanceled(false);
+      setIsPremium(reactivated);
+      setCurrentPlan(null);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const plans = [
     {
-      name: 'Free',
+      name: 'Free Trial',
       price: '$0',
-      period: 'forever',
-      description: 'Perfect for trying EchoSoul',
+      period: '3 days',
+      description: 'Try Talkers with one sacred conversation',
       features: [
-        '3 active conversations',
-        '100 messages per conversation',
-        'Basic AI responses',
-        'Standard support',
-        '24-hour data retention'
+        '1 conversation during trial',
+        'Full AI experience',
+        'Basic memory features',
+        'All conversation features',
+        '3-day access'
       ],
       limitations: [
-        'Limited conversation history',
-        'Basic response quality'
+        'Limited to 3 days',
+        'Only 1 conversation',
+        'No advanced analytics'
       ],
       buttonText: 'Current Plan',
       buttonVariant: 'outline' as const,
@@ -72,43 +174,25 @@ export default function PricingPage() {
     },
     {
       name: 'Premium',
-      price: '$19',
+      price: '$12',
       period: 'month',
       description: 'Unlimited sacred conversations',
       features: [
         'Unlimited conversations',
         'Unlimited messages',
-        'Advanced AI with memory',
+        'Advanced AI with long-term memory',
+        'Memory timeline & milestones',
+        'Birthday notifications',
         'Priority support',
-        'Extended data retention',
-        'Voice message responses',
         'Export conversations',
-        'Advanced privacy controls'
+        'Advanced analytics',
+        'Memory cards & reflections'
       ],
       limitations: [],
       buttonText: 'Upgrade to Premium',
       buttonVariant: 'default' as const,
       popular: true,
-      priceId: 'price_premium_monthly'
-    },
-    {
-      name: 'Lifetime',
-      price: '$199',
-      period: 'once',
-      description: 'Forever access to all features',
-      features: [
-        'Everything in Premium',
-        'Lifetime access',
-        'No monthly fees',
-        'Future feature updates',
-        'Premium support for life',
-        'Early access to new features'
-      ],
-      limitations: [],
-      buttonText: 'Get Lifetime Access',
-      buttonVariant: 'default' as const,
-      popular: false,
-      priceId: 'price_lifetime'
+      priceId: 'price_1RfIYfRTUL1jGVwlFEBWHV0M'
     }
   ];
 
@@ -130,7 +214,7 @@ export default function PricingPage() {
               </div>
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent">
-              EchoSoul
+              Talkers
             </h1>
           </div>
         </div>
@@ -158,7 +242,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {plans.map((plan, index) => (
             <Card 
               key={plan.name}
@@ -247,11 +331,25 @@ export default function PricingPage() {
             <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
               <CardContent className="p-6">
                 <h4 className="font-semibold text-gray-900 mb-2">
-                  How does the free plan work?
+                  How does the 3-day free trial work?
                 </h4>
                 <p className="text-gray-600">
-                  The free plan allows you to create up to 3 conversations with 100 messages each. 
-                  Perfect for trying EchoSoul and experiencing the magic of reconnection.
+                  You get 3 days to experience Talkers with one complete conversation. 
+                  This gives you the full AI experience to connect with your memories. 
+                  After 3 days, upgrade to Premium for unlimited conversations.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  What happens when my trial expires?
+                </h4>
+                <p className="text-gray-600">
+                  When your 3-day trial ends, you&apos;ll need to upgrade to Premium to continue 
+                  having conversations. Your existing conversations and memories are safely stored 
+                  and will be accessible once you upgrade.
                 </p>
               </CardContent>
             </Card>
@@ -263,7 +361,8 @@ export default function PricingPage() {
                 </h4>
                 <p className="text-gray-600">
                   Yes, you can cancel your Premium subscription at any time. Your conversations 
-                  will remain accessible until the end of your billing period.
+                  will remain accessible until the end of your billing period. We never hold 
+                  your memories hostage.
                 </p>
               </CardContent>
             </Card>
@@ -271,14 +370,98 @@ export default function PricingPage() {
             <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
               <CardContent className="p-6">
                 <h4 className="font-semibold text-gray-900 mb-2">
-                  Is my data secure?
+                  Is my data secure and private?
                 </h4>
                 <p className="text-gray-600">
-                  Absolutely. All conversations are encrypted and automatically deleted according 
-                  to your plan's retention policy. We never share or sell your personal data.
+                  Absolutely. All conversations are encrypted and stored securely. We use industry-standard 
+                  security practices and never share or sell your personal data. Your memories are yours alone.
                 </p>
               </CardContent>
             </Card>
+
+            <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  What payment methods do you accept?
+                </h4>
+                <p className="text-gray-600">
+                  We accept all major credit cards (Visa, Mastercard, American Express) through 
+                  our secure Stripe payment processing. Your payment information is never stored 
+                  on our servers.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Subscription Status */}
+        <div className="mt-20 max-w-3xl mx-auto">
+          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            Subscription Status
+          </h3>
+          
+          <div className="space-y-6">
+            <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Current Plan
+                </h4>
+                <p className="text-gray-600">{isPremium ? 'Premium' : 'Free Trial'}</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Subscription End Date
+                </h4>
+                <p className="text-blue-700">{formatDate(currentPlan?.currentPeriodEnd)}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            {!isPremium ? (
+              <Button 
+                onClick={handleUpgrade}
+                disabled={isUpdating}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {isUpdating ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Crown className="w-4 h-4 mr-2" />
+                )}
+                Upgrade to Premium
+              </Button>
+            ) :
+              <>
+                {isCanceled ? (
+                  <Button 
+                    onClick={handleReactivateSubscription}
+                    disabled={isUpdating}
+                    variant="outline"
+                    className="border-green-200 text-green-700 hover:bg-green-50"
+                  >
+                    Reactivate Subscription
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleCancelSubscription}
+                    disabled={isUpdating}
+                    variant="outline"
+                    className="border-red-200 text-red-700 hover:bg-red-50"
+                  >
+                    Cancel Subscription
+                  </Button>
+                )}
+                <Link href="/pricing">
+                  <Button variant="outline">
+                    Change Plan
+                  </Button>
+                </Link>
+              </>
+            }
           </div>
         </div>
       </div>

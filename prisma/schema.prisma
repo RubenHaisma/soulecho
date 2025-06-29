@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,15 +13,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -38,26 +34,36 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  // Subscription fields
-  stripeCustomerId       String?   @unique
-  stripeSubscriptionId   String?   @unique
+  id                     String            @id @default(cuid())
+  name                   String?
+  email                  String            @unique
+  emailVerified          DateTime?
+  image                  String?
+  password               String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  stripeCustomerId       String?           @unique
+  stripeSubscriptionId   String?           @unique
   stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
-  
-  accounts      Account[]
-  sessions      Session[]
-  chatSessions  ChatSession[]
-  
-  @@map(name: "users")
+  subscriptionStatus     String            @default("free") // "free", "trial", "premium", "canceled"
+  isTrialActive          Boolean           @default(true)
+  trialChatsUsed         Int               @default(0)
+  trialEndDate           DateTime?
+  trialStartDate         DateTime?         @default(now())
+  lastTokenReset         DateTime          @default(now())
+  responseQualityLevel   Int               @default(100)
+  tokensUsedToday        Int               @default(0)
+  totalTokensUsed        Int               @default(0)
+  accounts               Account[]
+  sessions               Session[]
+  chatSessions           ChatSession[]
+  memoryCards            MemoryCard[]
+  milestones             MemoryMilestone[]
+  notifications          NotificationLog[]
+  preferences            UserPreferences?
+
+  @@map("users")
 }
 
 model VerificationToken {
@@ -69,33 +75,125 @@ model VerificationToken {
 }
 
 model ChatSession {
-  id           String   @id @default(cuid())
-  userId       String
-  personName   String
+  id             String            @id @default(cuid())
+  userId         String
+  personName     String
   selectedPerson String
-  messageCount Int
+  messageCount   Int
   collectionName String
-  createdAt    DateTime @default(now())
-  lastActivity DateTime @default(now())
-  isActive     Boolean  @default(true)
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  conversations Conversation[]
-  
-  @@map(name: "chat_sessions")
+  createdAt      DateTime          @default(now())
+  lastActivity   DateTime          @default(now())
+  isActive       Boolean           @default(true)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations  Conversation[]
+  milestones     MemoryMilestone[]
+
+  @@map("chat_sessions")
 }
 
 model Conversation {
-  id            String   @id @default(cuid())
-  chatSessionId String
-  userMessage   String   @db.Text
-  aiResponse    String   @db.Text
-  contextUsed   Boolean  @default(false)
-  relevantMessages Int    @default(0)
-  processingTime String?
-  createdAt     DateTime @default(now())
-  
-  chatSession ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
-  
-  @@map(name: "conversations")
+  id               String      @id @default(cuid())
+  chatSessionId    String
+  userMessage      String
+  aiResponse       String
+  contextUsed      Boolean     @default(false)
+  relevantMessages Int         @default(0)
+  processingTime   String?
+  createdAt        DateTime    @default(now())
+  chatSession      ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+
+  @@map("conversations")
+}
+
+model UserPreferences {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  birthday                DateTime?
+  timezone                String    @default("UTC")
+  notificationEmail       String?
+  notificationPreferences Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model MemoryMilestone {
+  id                String        @id @default(cuid())
+  userId            String
+  chatSessionId     String?
+  title             String
+  description       String?
+  date              DateTime
+  type              MilestoneType
+  isRecurring       Boolean       @default(false)
+  recurrencePattern String?
+  imageUrl          String?
+  tags              String[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  memoryCards       MemoryCard[]
+  chatSession       ChatSession?  @relation(fields: [chatSessionId], references: [id])
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("memory_milestones")
+}
+
+model MemoryCard {
+  id          String           @id @default(cuid())
+  userId      String
+  milestoneId String?
+  title       String
+  content     String
+  imageUrl    String?
+  cardType    CardType
+  isGenerated Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  expiresAt   DateTime?
+  milestone   MemoryMilestone? @relation(fields: [milestoneId], references: [id])
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("memory_cards")
+}
+
+model NotificationLog {
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  message      String
+  isRead       Boolean          @default(false)
+  sentAt       DateTime         @default(now())
+  scheduledFor DateTime?
+  metadata     Json?
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_logs")
+}
+
+enum MilestoneType {
+  BIRTHDAY
+  ANNIVERSARY
+  SPECIAL_DAY
+  CONVERSATION_MOMENT
+  MEMORY_TRIGGER
+  CUSTOM
+}
+
+enum CardType {
+  BIRTHDAY
+  ANNIVERSARY
+  MEMORY_REFLECTION
+  CONVERSATION_HIGHLIGHT
+  AI_GENERATED
+  CUSTOM
+}
+
+enum NotificationType {
+  BIRTHDAY_REMINDER
+  MILESTONE_REMINDER
+  MEMORY_CARD
+  CONVERSATION_SUGGESTION
+  SYSTEM
 }

@@ -7,14 +7,16 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user's chat sessions with conversation counts
     const chatSessions = await prisma.chatSession.findMany({
       where: {
-        userId: session.user.id,
+        user: {
+          email: session.user.email
+        },
         isActive: true
       },
       include: {
@@ -38,13 +40,45 @@ export async function GET(request: NextRequest) {
 
     // Get user subscription info
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { email: session.user.email },
       select: {
+        id: true,
+        createdAt: true,
         stripeSubscriptionId: true,
         stripePriceId: true,
-        stripeCurrentPeriodEnd: true
+        stripeCurrentPeriodEnd: true,
+        subscriptionStatus: true,
+        isTrialActive: true,
+        trialStartDate: true,
+        trialEndDate: true
       }
     });
+
+    // Calculate premium status - check for both subscription and lifetime
+    const now = new Date();
+    const hasActiveSubscription = !!user?.stripeSubscriptionId && 
+                                !!user?.stripeCurrentPeriodEnd && 
+                                user.stripeCurrentPeriodEnd > now;
+    const hasLifetimeAccess = user?.stripePriceId === 'lifetime';
+    const isPremium = hasActiveSubscription || hasLifetimeAccess || user?.subscriptionStatus === 'premium';
+    
+    // If user is premium, ensure trial is marked as inactive
+    if (isPremium && user?.isTrialActive) {
+      await prisma.user.update({
+        where: { email: session.user.email },
+        data: { 
+          isTrialActive: false,
+          subscriptionStatus: 'premium'
+        }
+      });
+    }
+    
+    const trialEndDate = user?.trialEndDate || 
+                        (user?.trialStartDate ? new Date(user.trialStartDate.getTime() + 3 * 24 * 60 * 60 * 1000) : 
+                         new Date((user?.createdAt || new Date()).getTime() + 3 * 24 * 60 * 60 * 1000));
+    
+    const isTrialActive = user?.isTrialActive && now <= trialEndDate && !isPremium;
+    const daysLeft = isTrialActive ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
     // Calculate real statistics from actual conversations
     const totalConversations = chatSessions.reduce((sum, session) => sum + session.conversations.length, 0);
@@ -55,6 +89,8 @@ export async function GET(request: NextRequest) {
       sum + session.conversations.reduce((convSum, conv) => convSum + conv.relevantMessages, 0), 0
     );
 
+    const planType = isPremium ? 'premium' : (isTrialActive ? 'trial' : 'expired');
+
     const stats = {
       totalSessions: chatSessions.length,
       totalMessages: totalConversations,
@@ -62,7 +98,11 @@ export async function GET(request: NextRequest) {
       conversationsWithContext: conversationsWithContext,
       totalRelevantMessages: totalRelevantMessages,
       contextUsageRate: totalConversations > 0 ? Math.round((conversationsWithContext / totalConversations) * 100) : 0,
-      subscriptionStatus: user?.stripeSubscriptionId ? 'premium' : 'free'
+      subscriptionStatus: isPremium ? 'premium' : (isTrialActive ? 'trial' : 'expired'),
+      planType,
+      isTrialActive,
+      trialEndDate: trialEndDate.toISOString(),
+      daysLeft
     };
 
     return NextResponse.json({
