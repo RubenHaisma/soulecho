@@ -11,16 +11,19 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Please sign in to continue' }, { status: 401 });
     }
 
+    // Read the body once at the beginning
+    const body = await request.json();
+
     // Check user's subscription and trial status
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
         chatSessions: {
           include: {
-            conversations: true
-          }
-        }
-      }
+            conversations: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -30,16 +33,16 @@ export async function POST(request: Request) {
     const now = new Date();
     
     // Check if user has active premium subscription
-    const isPremium = !!user.stripeSubscriptionId && 
-                     !!user.stripeCurrentPeriodEnd && 
-                     user.stripeCurrentPeriodEnd > now;
+    const isPremium = !!(user as any).stripeSubscriptionId && 
+                     !!(user as any).stripeCurrentPeriodEnd && 
+                     (user as any).stripeCurrentPeriodEnd > now;
 
     // Calculate trial status
-    const trialEndDate = user.trialEndDate || 
-                        (user.trialStartDate ? new Date(user.trialStartDate.getTime() + 3 * 24 * 60 * 60 * 1000) : 
+    const trialEndDate = (user as any).trialEndDate || 
+                        ((user as any).trialStartDate ? new Date((user as any).trialStartDate.getTime() + 3 * 24 * 60 * 60 * 1000) : 
                          new Date(user.createdAt.getTime() + 3 * 24 * 60 * 60 * 1000));
     
-    const isTrialActive = user.isTrialActive && now <= trialEndDate;
+    const isTrialActive = (user as any).isTrialActive && now <= trialEndDate;
 
     // If neither premium nor trial active, block access
     if (!isPremium && !isTrialActive) {
@@ -52,15 +55,14 @@ export async function POST(request: Request) {
 
     // For trial users, check conversation limit
     if (!isPremium && isTrialActive) {
-             const totalConversations = user.chatSessions.reduce((sum: number, chatSession: any) => sum + chatSession.conversations.length, 0);
+             const totalConversations = (user as any).chatSessions.reduce((sum: number, chatSession: any) => sum + chatSession.conversations.length, 0);
       
       if (totalConversations >= 1) {
         // Check if this is the same session continuing
-        const body = await request.json();
         const sessionId = body.sessionId;
         
                  if (sessionId) {
-           const existingSession = user.chatSessions.find((s: any) => s.id === sessionId);
+           const existingSession = (user as any).chatSessions.find((s: any) => s.id === sessionId);
           if (!existingSession) {
             return Response.json({ 
               error: 'Trial users can only have 1 conversation. Upgrade to Premium for unlimited conversations.',
@@ -76,8 +78,6 @@ export async function POST(request: Request) {
       }
     }
 
-    const body = await request.json();
-    
     console.log('🔍 Environment check:');
     console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
     console.log('NODE_ENV:', process.env.NODE_ENV);

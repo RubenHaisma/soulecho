@@ -1,10 +1,5 @@
-import { ChromaClient, Collection } from 'chromadb';
+import { QdrantClient } from '@qdrant/js-client-rest';
 import { OpenAI } from 'openai';
-
-interface VectorStore {
-  client: ChromaClient;
-  openai: OpenAI;
-}
 
 interface MessageEmbedding {
   content: string;
@@ -15,13 +10,31 @@ interface MessageEmbedding {
   };
 }
 
+interface QdrantPoint {
+  id: string;
+  vector: number[];
+  payload: {
+    content: string;
+    timestamp: string;
+    sender: string;
+  };
+}
+
+interface QdrantSearchResult {
+  payload?: {
+    content: string;
+    timestamp: string;
+    sender: string;
+  };
+}
+
 class VectorStoreService {
-  private client: ChromaClient;
+  private client: QdrantClient;
   private openai: OpenAI;
 
   constructor() {
-    this.client = new ChromaClient({
-      path: process.env.CHROMA_URL || 'http://localhost:8000'
+    this.client = new QdrantClient({
+      url: process.env.QDRANT_URL || 'http://localhost:6333'
     });
     
     this.openai = new OpenAI({
@@ -42,84 +55,147 @@ class VectorStoreService {
     }
   }
 
-  async createCollection(sessionId: string, metadata: any): Promise<Collection> {
+  async createCollection(sessionId: string, metadata: any): Promise<void> {
     const collectionName = `session_${sessionId}`;
     
     try {
-      // Create collection (will throw if it already exists, which is fine)
-      return await this.client.createCollection({
-        name: collectionName,
-        metadata
-      });
-    } catch (error) {
-      // If collection already exists, try to get it
-      try {
-        return await this.client.getCollection({ 
-          name: collectionName,
-          embeddingFunction: null as any
+      // Check if collection exists
+      const collections = await this.client.getCollections();
+      const exists = collections.collections.some((c: any) => c.name === collectionName);
+      
+      if (!exists) {
+        // Create collection with proper configuration
+        await this.client.createCollection(collectionName, {
+          vectors: {
+            size: 1536, // OpenAI text-embedding-3-small dimension
+            distance: 'Cosine'
+          }
         });
-      } catch (getError) {
-        console.error('Error creating/getting collection:', error);
-        throw new Error('Failed to create vector collection');
+        
+        // Add metadata to collection
+        await this.client.updateCollection(collectionName, {
+          optimizers_config: {
+            default_segment_number: 2
+          }
+        });
       }
+    } catch (error) {
+      console.error('Error creating collection:', error);
+      throw new Error('Failed to create vector collection');
     }
   }
 
   async addMessages(
-    collection: Collection, 
+    sessionId: string, 
     messages: Array<{ content: string; timestamp: string; sender: string }>
   ): Promise<void> {
-    const embeddings: number[][] = [];
-    const documents: string[] = [];
-    const metadatas: any[] = [];
-    const ids: string[] = [];
+    const collectionName = `session_${sessionId}`;
+    const points: QdrantPoint[] = [];
 
     for (let i = 0; i < messages.length; i++) {
       const message = messages[i];
       try {
         const embedding = await this.createEmbedding(message.content);
-        embeddings.push(embedding);
-        documents.push(message.content);
-        metadatas.push({
-          timestamp: message.timestamp,
-          sender: message.sender
+        points.push({
+          id: `msg_${i}_${Date.now()}`,
+          vector: embedding,
+          payload: {
+            content: message.content,
+            timestamp: message.timestamp,
+            sender: message.sender
+          }
         });
-        ids.push(`msg_${i}_${Date.now()}`);
       } catch (error) {
         console.error(`Error creating embedding for message ${i}:`, error);
         // Continue with other messages
       }
     }
 
-    if (embeddings.length === 0) {
+    if (points.length === 0) {
       throw new Error('Failed to create any embeddings');
     }
 
-    await collection.add({
-      embeddings,
-      documents,
-      metadatas,
-      ids
-    });
+    try {
+      // Upload points in batches to avoid memory issues
+      const batchSize = 100;
+      for (let i = 0; i < points.length; i += batchSize) {
+        const batch = points.slice(i, i + batchSize);
+        await this.client.upsert(collectionName, {
+          points: batch
+        });
+      }
+    } catch (error) {
+      console.error('Error adding messages to collection:', error);
+      throw new Error('Failed to add messages to vector store');
+    }
   }
 
   async searchSimilar(
-    collection: Collection, 
+    sessionId: string, 
     query: string, 
     numResults: number = 5
   ): Promise<string[]> {
+    const collectionName = `session_${sessionId}`;
+    
     try {
       const queryEmbedding = await this.createEmbedding(query);
       
-      const results = await collection.query({
-        queryEmbeddings: [queryEmbedding],
-        nResults: numResults
+      const results = await this.client.search(collectionName, {
+        vector: queryEmbedding,
+        limit: numResults,
+        with_payload: true
       });
 
-      return (results.documents[0] || []).filter((doc): doc is string => doc !== null);
+      return results.map((result: any) => {
+        const payload = result.payload as any;
+        return payload?.content || '';
+      }).filter(Boolean);
     } catch (error) {
       console.error('Error searching similar messages:', error);
       throw new Error('Failed to search similar messages');
+    }
+  }
+
+  async search(
+    collectionName: string, 
+    query: string | number[], 
+    topK: number = 5
+  ): Promise<any[]> {
+    try {
+      let queryEmbedding: number[];
+      
+      if (typeof query === 'string') {
+        queryEmbedding = await this.createEmbedding(query);
+      } else {
+        queryEmbedding = query;
+      }
+      
+      const results = await this.client.search(collectionName, {
+        vector: queryEmbedding,
+        limit: topK,
+        with_payload: true
+      });
+
+      return results;
+    } catch (error) {
+      console.error('Error searching messages:', error);
+      throw new Error('Failed to search messages');
+    }
+  }
+
+  async getCollection(collectionName: string): Promise<any> {
+    try {
+      const collections = await this.client.getCollections();
+      const collection = collections.collections.find((c: any) => c.name === collectionName);
+      
+      if (!collection) {
+        throw new Error(`Collection ${collectionName} not found`);
+      }
+      
+      return collection;
+    } catch (error) {
+      console.error('Error getting collection:', error);
+      throw new Error('Failed to get collection');
     }
   }
 
@@ -127,7 +203,7 @@ class VectorStoreService {
     const collectionName = `session_${sessionId}`;
     
     try {
-      await this.client.deleteCollection({ name: collectionName });
+      await this.client.deleteCollection(collectionName);
     } catch (error) {
       console.error('Error deleting collection:', error);
       // Don't throw error for cleanup operations
@@ -176,6 +252,16 @@ Respond as ${personName} would, staying true to their character and the relation
     } catch (error) {
       console.error('Error generating response:', error);
       return "I'm having trouble finding the right words right now, but know that I'm always here with you in spirit.";
+    }
+  }
+
+  async healthCheck(): Promise<boolean> {
+    try {
+      await this.client.getCollections();
+      return true;
+    } catch (error) {
+      console.error('Qdrant health check failed:', error);
+      return false;
     }
   }
 }

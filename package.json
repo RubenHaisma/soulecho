@@ -9,8 +9,13 @@
     "lint": "next lint",
     "server": "node backend/server_claude.js",
     "start-all": "node scripts/start.js",
+    "start-qdrant": "node scripts/start-qdrant.js",
+    "test:qdrant": "node scripts/test-qdrant.js",
     "setup": "cp .env.example .env && npm install && npx prisma generate",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -23,6 +28,7 @@
     "@next-auth/prisma-adapter": "^1.0.7",
     "@next/swc-wasm-nodejs": "13.5.1",
     "@prisma/client": "^5.7.1",
+    "@qdrant/js-client-rest": "^1.14.1",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -56,7 +62,6 @@
     "@types/react-dom": "18.2.7",
     "autoprefixer": "10.4.15",
     "bcryptjs": "^2.4.3",
-    "chromadb": "^1.8.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

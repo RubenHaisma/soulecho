@@ -1,30 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { vectorStore } from '@/lib/vector-store';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check Qdrant connection
+    const qdrantHealthy = await vectorStore.healthCheck();
+    
     const healthCheck = {
-      status: 'ok',
+      status: 'healthy',
       timestamp: new Date().toISOString(),
       services: {
+        qdrant: qdrantHealthy ? 'healthy' : 'unhealthy',
         database: 'checking...',
-        resend: 'checking...',
-        api: 'ok'
+        openai: process.env.OPENAI_API_KEY ? 'configured' : 'not_configured',
+        resend: 'checking...'
       }
     };
 
     // Test database connection
     try {
       await prisma.$queryRaw`SELECT 1`;
-      healthCheck.services.database = 'ok';
+      healthCheck.services.database = 'healthy';
     } catch (error) {
-      healthCheck.services.database = 'error';
+      healthCheck.services.database = 'unhealthy';
       healthCheck.status = 'degraded';
     }
 
     // Test Resend configuration
     if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your-resend-api-key') {
-      healthCheck.services.resend = 'not configured';
+      healthCheck.services.resend = 'not_configured';
       healthCheck.status = 'degraded';
     } else {
       healthCheck.services.resend = 'configured';
@@ -32,11 +37,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(healthCheck);
   } catch (error) {
-    console.error('Health check error:', error);
+    console.error('Health check failed:', error);
     return NextResponse.json({
-      status: 'error',
+      status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      error: 'Internal server error'
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 

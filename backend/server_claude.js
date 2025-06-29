@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
-const { ChromaClient } = require('chromadb');
+const { QdrantClient } = require('@qdrant/js-client-rest');
 const { OpenAI } = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const path = require('path');
@@ -12,6 +12,8 @@ require('dotenv').config();
 // Add Prisma for direct database access
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
+const COMMON_WORDS_DUTCH = ['de', 'het', 'een', 'van', 'is', 'op', 'dat', 'en', 'je', 'niet', 'met', 'aan', 'voor', 'te', 'zijn', 'maar', 'als', 'was', 'dan', 'zo', 'me', 'wel', 'nog', 'wat', 'kan', 'door', 'zou', 'hem', 'bij', 'nu', 'ook', 'tot', 'mijn', 'die', 'naar', 'heeft', 'zijn', 'ze', 'er', 'uit', 'om', 'daar', 'deze', 'over', 'onder', 'hun', 'ff', 'wa', 'gwn', 'ofzo', 'man', 'toch', 'zeg'];
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -26,9 +28,11 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
 
-// Initialize ChromaDB client with better error handling
-const chromaClient = new ChromaClient({
-  path: process.env.CHROMA_URL || 'http://localhost:8000'
+// Initialize Qdrant client
+const qdrantClient = new QdrantClient({
+  url: process.env.QDRANT_URL || 'http://localhost:6333',
+  apiKey: process.env.QDRANT_API_KEY,
+  checkCompatibility: false,
 });
 
 // Validate required environment variables
@@ -47,7 +51,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 console.log('🚀 Starting EchoSoul backend server...');
-console.log(`📍 ChromaDB URL: ${process.env.CHROMA_URL || 'http://localhost:8000'}`);
+console.log(`📍 Qdrant URL: ${process.env.QDRANT_URL || 'http://localhost:6333'}`);
 console.log(`🔑 OpenAI API Key (for embeddings): ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`);
 console.log(`🤖 Anthropic API Key (for chat): ${process.env.ANTHROPIC_API_KEY ? '✅ Set' : '❌ Not set'}`);
 
@@ -418,8 +422,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     // Return specific error messages for common issues
     if (error.message.includes('API key')) {
       return res.status(500).json({ error: 'OpenAI API configuration error. Please check your API key.' });
-    } else if (error.message.includes('ChromaDB') || error.message.includes('collection')) {
-      return res.status(500).json({ error: 'Vector database error. Please ensure ChromaDB is running.' });
+    } else if (error.message.includes('Qdrant') || error.message.includes('collection')) {
+      return res.status(500).json({ error: 'Vector database error. Please ensure Qdrant is running.' });
     } else if (error.message.includes('embedding')) {
       return res.status(500).json({ error: 'Failed to process messages for AI. Please try again.' });
     }
@@ -492,23 +496,31 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
       processed: 0
     });
 
-    // Create ChromaDB collection for this session
+    // Create Qdrant collection for this session
     console.log('🗄️  Creating vector database collection...');
-    let collection;
+    const collectionName = `session_${sessionId}`;
     try {
-      collection = await chromaClient.createCollection({
-        name: `session_${sessionId}`,
-        metadata: { personName, messageCount: messages.length, createdAt: new Date().toISOString() }
-      });
-    } catch (error) {
-      if (error.message.includes('already exists')) {
-        collection = await chromaClient.getCollection({ name: `session_${sessionId}` });
-      } else {
-        throw error;
+      // Check if collection exists
+      try {
+        await qdrantClient.getCollection(collectionName);
+        console.log(`🗄️  Collection "${collectionName}" already exists.`);
+      } catch (error) {
+        // If not, create it
+        console.log(`🗄️  Collection "${collectionName}" not found, creating...`);
+        await qdrantClient.createCollection(collectionName, {
+          vectors: {
+            size: 1536, // for text-embedding-3-small
+            distance: 'Cosine'
+          }
+        });
+        console.log(`🗄️  Collection "${collectionName}" created.`);
       }
+
+    } catch (error) {
+        throw error;
     }
 
-    // Create embeddings and store in ChromaDB with progress tracking
+    // Create embeddings and store in Qdrant with progress tracking
     console.log('🧠 Creating embeddings...');
     uploadProgress.set(uploadId, {
       stage: 'analyzing',
@@ -553,9 +565,10 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
           metadatas.push({
             timestamp: message.timestamp,
             sender: message.sender,
-            index: messageIndex
+            index: messageIndex,
+            content: message.content // Storing content in payload
           });
-          ids.push(`msg_${messageIndex}_${Date.now()}`);
+          ids.push(uuidv4()); // Qdrant prefers UUIDs for IDs
         }
         
         // Update progress for entire batch
@@ -588,9 +601,10 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
             metadatas.push({
               timestamp: message.timestamp,
               sender: message.sender,
-              index: messageIndex
+              index: messageIndex,
+              content: message.content
             });
-            ids.push(`msg_${messageIndex}_${Date.now()}`);
+            ids.push(uuidv4());
             embeddingErrors--; // Reduce error count for successful fallback
           } catch (error) {
             console.error(`❌ Failed individual fallback for message ${messageIndex}:`, error.message);
@@ -616,7 +630,7 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
 
     console.log(`✅ Created ${embeddings.length} embeddings (${embeddingErrors} failed)`);
 
-    // Add to ChromaDB in chunks to avoid memory issues
+    // Add to Qdrant in chunks to avoid memory issues
     console.log('💾 Storing embeddings in vector database...');
     uploadProgress.set(uploadId, {
       stage: 'finalizing',
@@ -627,7 +641,7 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
     });
     
     // Store in smaller chunks to avoid "Invalid string length" error
-    const storageChunkSize = 1000; // Store 1000 embeddings at a time
+    const storageChunkSize = 100; // Store 100 embeddings at a time
     const totalChunks = Math.ceil(embeddings.length / storageChunkSize);
     
     console.log(`💾 Storing ${embeddings.length} embeddings in ${totalChunks} chunks`);
@@ -637,17 +651,17 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
       const endIndex = Math.min(startIndex + storageChunkSize, embeddings.length);
       
       const chunkEmbeddings = embeddings.slice(startIndex, endIndex);
-      const chunkDocuments = documents.slice(startIndex, endIndex);
       const chunkMetadatas = metadatas.slice(startIndex, endIndex);
       const chunkIds = ids.slice(startIndex, endIndex);
       
       console.log(`💾 Storing chunk ${chunkIndex + 1}/${totalChunks} (${chunkEmbeddings.length} embeddings)`);
       
-      await collection.add({
-        embeddings: chunkEmbeddings,
-        documents: chunkDocuments,
-        metadatas: chunkMetadatas,
-        ids: chunkIds
+      await qdrantClient.upsert(collectionName, {
+        points: chunkEmbeddings.map((vector, i) => ({
+          id: chunkIds[i],
+          vector: vector,
+          payload: chunkMetadatas[i]
+        }))
       });
       
       // Update progress for storage
@@ -696,22 +710,32 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
 
     // Create chat session in database
     try {
-      // Create chat session directly in database
-      const chatSession = await prisma.chatSession.create({
-        data: {
-          id: sessionId,
-          userId,
-          personName,
-          selectedPerson,
-          messageCount: messages.length,
-          collectionName: `session_${sessionId}`,
-          createdAt: new Date(),
-          lastActivity: new Date(),
-          isActive: true
-        },
+      // First, check if the user exists
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
       });
 
-      console.log(`💾 Created chat session: ${chatSession.id} for ${personName}`);
+      if (user) {
+        // Create chat session directly in database
+        const chatSession = await prisma.chatSession.create({
+          data: {
+            id: sessionId,
+            userId,
+            personName,
+            selectedPerson,
+            messageCount: messages.length,
+            collectionName: `session_${sessionId}`,
+            detectedLanguages: detectedLanguages,
+            createdAt: new Date(),
+            lastActivity: new Date(),
+            isActive: true,
+          },
+        });
+
+        console.log(`💾 Created chat session: ${chatSession.id} for ${personName}`);
+      } else {
+        console.warn(`⚠️ User with ID "${userId}" not found. Skipping chat session creation.`);
+      }
     } catch (error) {
       console.warn('⚠️ Error saving chat session:', error.message);
       // Continue processing even if session creation fails
@@ -734,7 +758,7 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
       stage: 'error',
       progress: 0,
       message: error.message.includes('API key') ? 'OpenAI API configuration error' :
-               error.message.includes('ChromaDB') ? 'Vector database error' :
+               error.message.includes('Qdrant') ? 'Vector database error' :
                error.message.includes('embedding') ? 'Failed to process messages for AI' :
                'Failed to process file',
       total: 0,
@@ -754,27 +778,55 @@ app.get('/api/session/:sessionId', async (req, res) => {
 
     let session = sessions.get(sessionId);
     if (!session) {
-      return res.status(404).json({ error: 'Session not found or expired' });
+      console.log(`Session not in memory, trying to load from DB: ${sessionId}`);
+      const dbSession = await prisma.chatSession.findUnique({
+        where: { id: sessionId },
+      });
+
+      if (dbSession) {
+        console.log(`Session found in DB, loading into memory: ${sessionId}`);
+        session = {
+          personName: dbSession.personName,
+          selectedPerson: dbSession.selectedPerson,
+          messageCount: dbSession.messageCount,
+          collectionName: dbSession.collectionName,
+          createdAt: dbSession.createdAt,
+          lastActivity: dbSession.lastActivity,
+          detectedLanguages: dbSession.detectedLanguages || [],
+          allMessages: [], 
+          messageStats: null,
+        };
+        sessions.set(sessionId, session);
+      } else {
+        return res.status(404).json({ error: 'Session not found or expired' });
+      }
     }
 
-    // If session doesn't have full messages loaded, try to load them from ChromaDB
+    // If session doesn't have full messages loaded, try to load them from Qdrant
     if (!session.allMessages || session.allMessages.length === 0) {
       console.log(`📚 Loading full dataset for session ${sessionId}...`);
       try {
-        const collection = await chromaClient.getCollection({
-          name: session.collectionName
-        });
+        const collectionName = session.collectionName;
         
-        // Get ALL messages from the collection
-        const results = await collection.get({
-          include: ['documents', 'metadatas']
-        });
-        
-        if (results.documents && results.documents.length > 0) {
-          const allMessages = results.documents.map((doc, index) => ({
-            content: doc,
-            timestamp: results.metadatas[index]?.timestamp || '',
-            sender: results.metadatas[index]?.sender || session.selectedPerson
+        // Get ALL messages from the collection by scrolling
+        let allPoints = [];
+        let nextOffset = 0;
+        do {
+          const scrollResponse = await qdrantClient.scroll(collectionName, {
+            limit: 250,
+            with_payload: true,
+            with_vector: false,
+            offset: nextOffset
+          });
+          allPoints.push(...scrollResponse.points);
+          nextOffset = scrollResponse.next_page_offset;
+        } while (nextOffset);
+
+        if (allPoints.length > 0) {
+          const allMessages = allPoints.map(point => ({
+            content: point.payload.content,
+            timestamp: point.payload.timestamp || '',
+            sender: point.payload.sender || session.selectedPerson
           }));
           
           // Update session with full dataset
@@ -784,8 +836,14 @@ app.get('/api/session/:sessionId', async (req, res) => {
           console.log(`✅ Loaded ${allMessages.length} messages for session ${sessionId}`);
         }
       } catch (error) {
-        console.warn('⚠️ Failed to load full dataset from ChromaDB:', error.message);
+        console.warn('⚠️ Failed to load full dataset from Qdrant:', error.message);
       }
+    }
+
+    if (!session.messageStats && session.allMessages && session.allMessages.length > 0) {
+      console.log(`📊 Generating message statistics for session ${sessionId}...`);
+      session.messageStats = generateMessageStatistics(session.allMessages);
+      sessions.set(sessionId, session);
     }
 
           res.json({
@@ -854,9 +912,7 @@ app.post('/api/chat', async (req, res) => {
     // Get the collection
     let collection;
     try {
-      collection = await chromaClient.getCollection({
-        name: session.collectionName
-      });
+      collection = await qdrantClient.getCollection(session.collectionName);
     } catch (error) {
       console.error('❌ Failed to get collection:', error);
       return res.status(500).json({ 
@@ -897,23 +953,21 @@ app.post('/api/chat', async (req, res) => {
     
     try {
       // First, do broad semantic search
-      const generalResults = await collection.query({
-        queryEmbeddings: [userEmbedding],
-        nResults: 15,
-        include: ['documents', 'metadatas', 'distances']
+      const generalResults = await qdrantClient.search(session.collectionName, {
+        vector: userEmbedding,
+        limit: 15,
+        with_payload: true,
+        score_threshold: 0.5 // Adjust threshold for Qdrant cosine similarity
       });
       
-      const relevantMessages = generalResults.documents[0] || [];
-      const distances = generalResults.distances[0] || [];
-      
+      const relevantMessages = generalResults.map(p => p.payload.content) || [];
+      const scores = generalResults.map(p => p.score) || [];
+
       semanticContext = relevantMessages
-        .map((msg, index) => ({ content: msg, distance: distances[index] }))
-        .filter(item => item.distance < 0.8)
-        .slice(0, 8)
-        .map(item => item.content);
+        .slice(0, 8);
       
       // MEMORY RETRIEVAL: Search for specific topics mentioned in current message
-      specificMemories = await retrieveSpecificMemories(collection, message, allMessages);
+      specificMemories = await retrieveSpecificMemories(session.collectionName, message, allMessages);
       
       console.log(`🔍 Found ${semanticContext.length} semantically relevant messages`);
       console.log(`🧠 Found ${specificMemories.length} specific memory references`);
@@ -1259,6 +1313,7 @@ CRITICAL: You're a REAL PERSON with REAL MEMORIES - act like it!`;
               selectedPerson: session.selectedPerson,
               messageCount: 1,
               collectionName: session.collectionName,
+              detectedLanguages: session.detectedLanguages || [],
               createdAt: new Date(),
               lastActivity: new Date(),
               isActive: true
@@ -2434,7 +2489,7 @@ function analyzeConversationTrend(conversationHistory) {
 }
 
 // Advanced memory retrieval for specific topics/locations/experiences
-async function retrieveSpecificMemories(collection, currentMessage, allMessages) {
+async function retrieveSpecificMemories(collectionName, currentMessage, allMessages) {
   const messageLower = currentMessage.toLowerCase();
   const memories = [];
   
@@ -2449,20 +2504,21 @@ async function retrieveSpecificMemories(collection, currentMessage, allMessages)
       const topicEmbedding = await createEmbedding(topic);
       
       // Search for messages containing this topic
-      const topicResults = await collection.query({
-        queryEmbeddings: [topicEmbedding],
-        nResults: 15,
-        include: ['documents', 'metadatas', 'distances']
+      const topicResults = await qdrantClient.search(collectionName, {
+        vector: topicEmbedding,
+        limit: 15,
+        with_payload: true,
+        score_threshold: 0.5
       });
       
-      if (topicResults.documents[0]) {
-        const topicMessages = topicResults.documents[0]
-          .map((msg, index) => ({ 
-            content: msg, 
-            distance: topicResults.distances[0][index],
+      if (topicResults) {
+        const topicMessages = topicResults
+          .map(point => ({ 
+            content: point.payload.content, 
+            distance: 1 - point.score, // Convert cosine score to distance-like metric
             topic: topic
           }))
-          .filter(item => item.distance < 0.8) // More lenient for better recall
+          .filter(item => item.distance < 0.5) // Adjust filter based on score
           .slice(0, 5); // More memories per topic
           
         memories.push(...topicMessages);
@@ -2475,20 +2531,21 @@ async function retrieveSpecificMemories(collection, currentMessage, allMessages)
   // Also search for contextual memories using the full message
   try {
     const messageEmbedding = await createEmbedding(currentMessage);
-    const contextualResults = await collection.query({
-      queryEmbeddings: [messageEmbedding],
-      nResults: 12,
-      include: ['documents', 'metadatas', 'distances']
+    const contextualResults = await qdrantClient.search(collectionName, {
+      vector: messageEmbedding,
+      limit: 12,
+      with_payload: true,
+      score_threshold: 0.45 // Lower threshold for broader context
     });
     
-    if (contextualResults.documents[0]) {
-      const contextualMemories = contextualResults.documents[0]
-        .map((msg, index) => ({ 
-          content: msg, 
-          distance: contextualResults.distances[0][index],
+    if (contextualResults) {
+      const contextualMemories = contextualResults
+        .map(point => ({ 
+          content: point.payload.content, 
+          distance: 1 - point.score,
           topic: 'contextual'
         }))
-        .filter(item => item.distance < 0.85)
+        .filter(item => item.distance < 0.55)
         .slice(0, 6);
         
       memories.push(...contextualMemories);
@@ -2523,9 +2580,7 @@ function extractTopicsAndEntities(messageLower) {
   // Look for potential entities (nouns, places, companies, etc.)
   words.forEach(word => {
     // Skip common words
-    const commonWords = ['de', 'het', 'een', 'van', 'is', 'op', 'dat', 'en', 'je', 'niet', 'met', 'aan', 'voor', 'te', 'zijn', 'maar', 'als', 'was', 'dan', 'zo', 'me', 'wel', 'nog', 'wat', 'kan', 'door', 'zou', 'hem', 'bij', 'nu', 'ook', 'tot', 'mijn', 'die', 'naar', 'heeft', 'zijn', 'ze', 'er', 'uit', 'om', 'daar', 'deze', 'over', 'onder', 'hun', 'ff', 'wa', 'gwn', 'ofzo', 'man', 'toch', 'zeg'];
-    
-    if (word.length > 3 && !commonWords.includes(word)) {
+    if (word.length > 3 && !COMMON_WORDS_DUTCH.includes(word)) {
       // Add the word itself as a potential topic
       topics.push(word);
       
@@ -2547,7 +2602,7 @@ function extractTopicsAndEntities(messageLower) {
   // Extract phrases (2-3 word combinations) that might be meaningful
   for (let i = 0; i < words.length - 1; i++) {
     const phrase = words.slice(i, i + 2).join(' ');
-    if (phrase.length > 5 && !commonWords.some(word => phrase.includes(word))) {
+    if (phrase.length > 5 && !COMMON_WORDS_DUTCH.some(word => phrase.includes(word))) {
       topics.push(phrase);
     }
   }
@@ -2834,10 +2889,8 @@ const cleanupSessions = async () => {
   for (const [sessionId, session] of sessions.entries()) {
     if (now - session.lastActivity > maxAge) {
       try {
-        // Delete ChromaDB collection
-        await chromaClient.deleteCollection({
-          name: session.collectionName
-        });
+        // Delete Qdrant collection
+        await qdrantClient.deleteCollection(session.collectionName);
         
         // Remove from sessions
         sessions.delete(sessionId);
@@ -2908,9 +2961,7 @@ app.post('/api/context', async (req, res) => {
     // Get the collection
     let collection;
     try {
-      collection = await chromaClient.getCollection({
-        name: session.collectionName
-      });
+      collection = await qdrantClient.getCollection(session.collectionName);
     } catch (error) {
       console.error('❌ Failed to get collection for context:', error);
       return res.status(500).json({ error: 'Session data not found' });
@@ -2929,12 +2980,12 @@ app.post('/api/context', async (req, res) => {
       return res.status(500).json({ error: 'Failed to process query' });
     }
     // Query similar messages
-    const results = await collection.query({
-      queryEmbeddings: [queryEmbedding],
-      nResults: limit,
-      include: ['documents', 'metadatas']
+    const results = await qdrantClient.search(session.collectionName, {
+      vector: queryEmbedding,
+      limit: limit,
+      with_payload: true,
     });
-    const context = results.documents[0] || [];
+    const context = results.map(p => p.payload.content) || [];
     res.json({ 
       context,
       count: context.length
@@ -2995,5 +3046,5 @@ function extractWorkInfoFromHistory(conversationHistory) {
 
 app.listen(port, () => {
   console.log(`EchoSoul backend server running on port ${port}`);
-  console.log('Make sure ChromaDB is running on http://localhost:8000');
+  console.log('Make sure Qdrant is running on http://localhost:6333');
 });

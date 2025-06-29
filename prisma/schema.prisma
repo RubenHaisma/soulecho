@@ -81,6 +81,7 @@ model ChatSession {
   selectedPerson String
   messageCount   Int
   collectionName String
+  detectedLanguages String[]       @default([])
   createdAt      DateTime          @default(now())
   lastActivity   DateTime          @default(now())
   isActive       Boolean           @default(true)

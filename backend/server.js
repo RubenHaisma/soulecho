@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
-const { ChromaClient } = require('chromadb');
 const { OpenAI } = require('openai');
 const path = require('path');
 const fs = require('fs');
@@ -12,17 +11,15 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Import our Qdrant-based vector store
+const { vectorStore } = require('../lib/vector-store');
+
 const app = express();
 const port = process.env.PORT || 3001;
 
 // Initialize OpenAI with better error handling
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
-});
-
-// Initialize ChromaDB client with better error handling
-const chromaClient = new ChromaClient({
-  path: process.env.CHROMA_URL || 'http://localhost:8000'
 });
 
 // Validate required environment variables
@@ -34,7 +31,7 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 console.log('🚀 Starting EchoSoul backend server...');
-console.log(`📍 ChromaDB URL: ${process.env.CHROMA_URL || 'http://localhost:8000'}`);
+console.log(`📍 Qdrant URL: ${process.env.QDRANT_URL || 'http://localhost:6333'}`);
 console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`);
 
 // Test OpenAI connection on startup
@@ -49,6 +46,21 @@ if (process.env.OPENAI_API_KEY) {
     }
   })();
 }
+
+// Test Qdrant connection on startup
+(async () => {
+  try {
+    const isHealthy = await vectorStore.healthCheck();
+    if (isHealthy) {
+      console.log('✅ Qdrant vector database connection verified');
+    } else {
+      console.error('❌ Qdrant vector database connection failed');
+    }
+  } catch (error) {
+    console.error('❌ Qdrant vector database connection failed:', error.message);
+    console.log('💡 Please ensure Qdrant is running and accessible');
+  }
+})();
 
 // Middleware
 app.use(cors());
@@ -462,132 +474,28 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
       processed: 0
     });
 
-    // Create ChromaDB collection for this session
+    // Create Qdrant collection for this session
     console.log('🗄️  Creating vector database collection...');
-    let collection;
     try {
-      collection = await chromaClient.createCollection({
-        name: `session_${sessionId}`,
-        metadata: { personName, messageCount: messages.length, createdAt: new Date().toISOString() }
+      await vectorStore.createCollection(sessionId, { 
+        personName, 
+        messageCount: messages.length, 
+        createdAt: new Date().toISOString() 
       });
     } catch (error) {
-      if (error.message.includes('already exists')) {
-        collection = await chromaClient.getCollection({ name: `session_${sessionId}` });
-      } else {
-        throw error;
-      }
-    }
-
-    // Create embeddings and store in ChromaDB with progress tracking
-    console.log('🧠 Creating embeddings...');
-    uploadProgress.set(uploadId, {
-      stage: 'analyzing',
-      progress: 30,
-      message: 'Creating embeddings for AI analysis...',
-      total: messages.length,
-      processed: 0
-    });
-    
-    const embeddings = [];
-    const documents = [];
-    const metadatas = [];
-    const ids = [];
-    let embeddingErrors = 0;
-
-    // Process in much larger batches for speed (OpenAI supports up to 2048 inputs per request)
-    const batchSize = 100; // Increased from 10 to 100 for much faster processing
-    const totalBatches = Math.ceil(messages.length / batchSize);
-    
-    console.log(`📊 Processing ${messages.length} messages in ${totalBatches} batches of ${batchSize}`);
-    
-    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-      const startIndex = batchIndex * batchSize;
-      const endIndex = Math.min(startIndex + batchSize, messages.length);
-      const batch = messages.slice(startIndex, endIndex);
-      
-      try {
-        // Extract texts for batch processing
-        const batchTexts = batch.map(msg => msg.content);
-        
-        // Create embeddings for entire batch at once
-        console.log(`📊 Processing batch ${batchIndex + 1}/${totalBatches} (${batch.length} messages)`);
-        const batchEmbeddings = await createBatchEmbeddings(batchTexts);
-        
-        // Add successful embeddings to results
-        for (let i = 0; i < batch.length && i < batchEmbeddings.length; i++) {
-          const messageIndex = startIndex + i;
-          const message = batch[i];
-          
-          embeddings.push(batchEmbeddings[i]);
-          documents.push(message.content);
-          metadatas.push({
-            timestamp: message.timestamp,
-            sender: message.sender,
-            index: messageIndex
-          });
-          ids.push(`msg_${messageIndex}_${Date.now()}`);
-        }
-        
-        // Update progress for entire batch
-        const processed = Math.min(endIndex, messages.length);
-        const progress = 30 + Math.round((processed / messages.length) * 50); // 30-80%
-        uploadProgress.set(uploadId, {
-          stage: 'analyzing',
-          progress,
-          message: `Analyzing conversation... (${processed.toLocaleString()}/${messages.length.toLocaleString()})`,
-          total: messages.length,
-          processed
-        });
-        
-        console.log(`📊 Batch ${batchIndex + 1} complete: ${processed}/${messages.length} messages processed`);
-        
-      } catch (error) {
-        console.error(`❌ Failed to process batch ${batchIndex + 1}:`, error.message);
-        embeddingErrors += batch.length;
-        
-        // Try individual messages as fallback
-        console.log(`🔄 Falling back to individual processing for batch ${batchIndex + 1}`);
-        for (let i = 0; i < batch.length; i++) {
-          const messageIndex = startIndex + i;
-          const message = batch[i];
-          
-          try {
-            const embedding = await createEmbedding(message.content);
-            embeddings.push(embedding);
-            documents.push(message.content);
-            metadatas.push({
-              timestamp: message.timestamp,
-              sender: message.sender,
-              index: messageIndex
-            });
-            ids.push(`msg_${messageIndex}_${Date.now()}`);
-            embeddingErrors--; // Reduce error count for successful fallback
-          } catch (error) {
-            console.error(`❌ Failed individual fallback for message ${messageIndex}:`, error.message);
-          }
-        }
-      }
-    }
-
-    if (embeddings.length === 0) {
+      console.error('Error creating collection:', error);
       uploadProgress.set(uploadId, {
         stage: 'error',
         progress: 0,
-        message: 'Failed to create any embeddings. This might be due to API issues.',
+        message: 'Failed to create vector database collection.',
         total: messages.length,
         processed: 0
       });
       return;
     }
 
-    if (embeddingErrors > messages.length * 0.3) {
-      console.warn(`⚠️  High embedding error rate: ${embeddingErrors}/${messages.length} failed`);
-    }
-
-    console.log(`✅ Created ${embeddings.length} embeddings (${embeddingErrors} failed)`);
-
-    // Add to ChromaDB in chunks to avoid memory issues
-    console.log('💾 Storing embeddings in vector database...');
+    // Store messages directly in Qdrant with embeddings
+    console.log('💾 Storing messages in vector database...');
     uploadProgress.set(uploadId, {
       stage: 'finalizing',
       progress: 85,
@@ -596,50 +504,21 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
       processed: messages.length
     });
     
-    // Store in smaller chunks to avoid "Invalid string length" error
-    const storageChunkSize = 1000; // Store 1000 embeddings at a time
-    const totalChunks = Math.ceil(embeddings.length / storageChunkSize);
-    
-    console.log(`💾 Storing ${embeddings.length} embeddings in ${totalChunks} chunks`);
-    
-    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-      const startIndex = chunkIndex * storageChunkSize;
-      const endIndex = Math.min(startIndex + storageChunkSize, embeddings.length);
-      
-      const chunkEmbeddings = embeddings.slice(startIndex, endIndex);
-      const chunkDocuments = documents.slice(startIndex, endIndex);
-      const chunkMetadatas = metadatas.slice(startIndex, endIndex);
-      const chunkIds = ids.slice(startIndex, endIndex);
-      
-      console.log(`💾 Storing chunk ${chunkIndex + 1}/${totalChunks} (${chunkEmbeddings.length} embeddings)`);
-      
-      await collection.add({
-        embeddings: chunkEmbeddings,
-        documents: chunkDocuments,
-        metadatas: chunkMetadatas,
-        ids: chunkIds
-      });
-      
-      // Update progress for storage
-      const storageProgress = 85 + Math.round((chunkIndex + 1) / totalChunks * 10); // 85-95%
+    try {
+      await vectorStore.addMessages(sessionId, messages);
+      console.log(`✅ Successfully stored ${messages.length} messages in Qdrant`);
+    } catch (error) {
+      console.error('Error storing messages in Qdrant:', error);
       uploadProgress.set(uploadId, {
-        stage: 'finalizing',
-        progress: storageProgress,
-        message: `Storing in vector database... (${chunkIndex + 1}/${totalChunks} chunks)`,
+        stage: 'error',
+        progress: 0,
+        message: 'Failed to store messages in vector database.',
         total: messages.length,
-        processed: messages.length
+        processed: 0
       });
+      return;
     }
 
-    // Store session data
-    uploadProgress.set(uploadId, {
-      stage: 'finalizing',
-      progress: 95,
-      message: 'Finalizing session...',
-      total: messages.length,
-      processed: messages.length
-    });
-    
     // Detect language(s) using OpenAI
     const detectedLanguages = await detectLanguagesOpenAI(messages);
     console.log('🌐 Detected language(s):', detectedLanguages);
@@ -652,7 +531,7 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
       personName,
       selectedPerson,
       messageCount: messages.length,
-      embeddingCount: embeddings.length,
+      embeddingCount: messages.length,
       collectionName: `session_${sessionId}`,
       createdAt: new Date(),
       lastActivity: new Date(),
@@ -727,24 +606,23 @@ app.get('/api/session/:sessionId', async (req, res) => {
       return res.status(404).json({ error: 'Session not found or expired' });
     }
 
-    // If session doesn't have full messages loaded, try to load them from ChromaDB
+    // If session doesn't have full messages loaded, try to load them from Qdrant
     if (!session.allMessages || session.allMessages.length === 0) {
       console.log(`📚 Loading full dataset for session ${sessionId}...`);
       try {
-        const collection = await chromaClient.getCollection({
-          name: session.collectionName
-        });
+        const collection = await vectorStore.getCollection(session.collectionName);
         
         // Get ALL messages from the collection
-        const results = await collection.get({
-          include: ['documents', 'metadatas']
+        const results = await vectorStore.search(session.collectionName, {
+          query: session.embeddingCount,
+          topK: 1000
         });
         
-        if (results.documents && results.documents.length > 0) {
-          const allMessages = results.documents.map((doc, index) => ({
-            content: doc,
-            timestamp: results.metadatas[index]?.timestamp || '',
-            sender: results.metadatas[index]?.sender || session.selectedPerson
+        if (results.length > 0) {
+          const allMessages = results.map((doc, index) => ({
+            content: doc.payload.content,
+            timestamp: doc.payload.timestamp || '',
+            sender: doc.payload.sender || session.selectedPerson
           }));
           
           // Update session with full dataset
@@ -754,7 +632,7 @@ app.get('/api/session/:sessionId', async (req, res) => {
           console.log(`✅ Loaded ${allMessages.length} messages for session ${sessionId}`);
         }
       } catch (error) {
-        console.warn('⚠️ Failed to load full dataset from ChromaDB:', error.message);
+        console.warn('⚠️ Failed to load full dataset from Qdrant:', error.message);
       }
     }
 
@@ -824,9 +702,7 @@ app.post('/api/chat', async (req, res) => {
     // Get the collection
     let collection;
     try {
-      collection = await chromaClient.getCollection({
-        name: session.collectionName
-      });
+      collection = await vectorStore.getCollection(session.collectionName);
     } catch (error) {
       console.error('❌ Failed to get collection:', error);
       return res.status(500).json({ 
@@ -867,14 +743,13 @@ app.post('/api/chat', async (req, res) => {
     
     try {
       // First, do broad semantic search
-      const generalResults = await collection.query({
-        queryEmbeddings: [userEmbedding],
-        nResults: 15,
-        include: ['documents', 'metadatas', 'distances']
+      const generalResults = await vectorStore.search(session.collectionName, {
+        query: userEmbedding,
+        topK: 15
       });
       
-      const relevantMessages = generalResults.documents[0] || [];
-      const distances = generalResults.distances[0] || [];
+      const relevantMessages = generalResults.map(doc => doc.payload.content);
+      const distances = generalResults.map(doc => doc.score);
       
       semanticContext = relevantMessages
         .map((msg, index) => ({ content: msg, distance: distances[index] }))
@@ -883,7 +758,7 @@ app.post('/api/chat', async (req, res) => {
         .map(item => item.content);
       
       // MEMORY RETRIEVAL: Search for specific topics mentioned in current message
-      specificMemories = await retrieveSpecificMemories(collection, message, allMessages);
+      specificMemories = await retrieveSpecificMemories(session.collectionName, message, allMessages);
       
       console.log(`🔍 Found ${semanticContext.length} semantically relevant messages`);
       console.log(`🧠 Found ${specificMemories.length} specific memory references`);
@@ -2397,7 +2272,7 @@ function analyzeConversationTrend(conversationHistory) {
 }
 
 // Advanced memory retrieval for specific topics/locations/experiences
-async function retrieveSpecificMemories(collection, currentMessage, allMessages) {
+async function retrieveSpecificMemories(collectionName, currentMessage, allMessages) {
   const messageLower = currentMessage.toLowerCase();
   const memories = [];
   
@@ -2412,23 +2287,19 @@ async function retrieveSpecificMemories(collection, currentMessage, allMessages)
       const topicEmbedding = await createEmbedding(topic);
       
       // Search for messages containing this topic
-      const topicResults = await collection.query({
-        queryEmbeddings: [topicEmbedding],
-        nResults: 8,
-        include: ['documents', 'metadatas', 'distances']
+      const topicResults = await vectorStore.search(collectionName, {
+        query: topicEmbedding,
+        topK: 8
       });
       
-      if (topicResults.documents[0]) {
-        const topicMessages = topicResults.documents[0]
-          .map((msg, index) => ({ 
-            content: msg, 
-            distance: topicResults.distances[0][index],
-            topic: topic
-          }))
-          .filter(item => item.distance < 0.7) // More strict for memories
-          .slice(0, 3); // Top 3 per topic
-          
-        memories.push(...topicMessages);
+      if (topicResults.length > 0) {
+        const topicMessages = topicResults.map(doc => doc.payload.content);
+        const distances = topicResults.map(doc => doc.score);
+        
+        memories.push(...topicMessages.map((msg, index) => ({
+          content: msg,
+          distance: distances[index]
+        })));
       }
     } catch (error) {
       console.warn(`⚠️ Memory search failed for topic "${topic}":`, error.message);
@@ -2769,10 +2640,8 @@ const cleanupSessions = async () => {
   for (const [sessionId, session] of sessions.entries()) {
     if (now - session.lastActivity > maxAge) {
       try {
-        // Delete ChromaDB collection
-        await chromaClient.deleteCollection({
-          name: session.collectionName
-        });
+        // Delete Qdrant collection
+        await vectorStore.deleteCollection(session.collectionName);
         
         // Remove from sessions
         sessions.delete(sessionId);
@@ -2843,9 +2712,7 @@ app.post('/api/context', async (req, res) => {
     // Get the collection
     let collection;
     try {
-      collection = await chromaClient.getCollection({
-        name: session.collectionName
-      });
+      collection = await vectorStore.getCollection(session.collectionName);
     } catch (error) {
       console.error('❌ Failed to get collection for context:', error);
       return res.status(500).json({ error: 'Session data not found' });
@@ -2864,12 +2731,11 @@ app.post('/api/context', async (req, res) => {
       return res.status(500).json({ error: 'Failed to process query' });
     }
     // Query similar messages
-    const results = await collection.query({
-      queryEmbeddings: [queryEmbedding],
-      nResults: limit,
-      include: ['documents', 'metadatas']
+    const results = await vectorStore.search(session.collectionName, {
+      query: queryEmbedding,
+      topK: limit
     });
-    const context = results.documents[0] || [];
+    const context = results.map(doc => doc.payload.content);
     res.json({ 
       context,
       count: context.length
@@ -2882,5 +2748,5 @@ app.post('/api/context', async (req, res) => {
 
 app.listen(port, () => {
   console.log(`EchoSoul backend server running on port ${port}`);
-  console.log('Make sure ChromaDB is running on http://localhost:8000');
+  console.log('Make sure Qdrant is running on http://localhost:6333');
 });

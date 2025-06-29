@@ -53,19 +53,81 @@ function checkNodeVersion() {
   return true;
 }
 
-function checkChromaDB() {
+function checkDocker() {
   try {
-    const response = execSync('curl -s http://localhost:8000/api/v1/heartbeat', { timeout: 3000 });
-    log('✅ ChromaDB is running', 'green');
+    execSync('docker --version', { stdio: 'ignore' });
+    log('✅ Docker is available', 'green');
     return true;
   } catch (error) {
-    log('❌ ChromaDB not accessible at localhost:8000', 'red');
-    log('🔧 To start ChromaDB:', 'yellow');
-    log('   pip install chromadb', 'cyan');
-    log('   chroma run --host localhost --port 8000', 'cyan');
-    log('   OR: docker run -p 8000:8000 ghcr.io/chroma-core/chroma:latest', 'cyan');
+    log('❌ Docker not found', 'red');
+    log('🔧 Please install Docker Desktop or Docker CLI', 'yellow');
     return false;
   }
+}
+
+function checkDockerCompose() {
+  try {
+    execSync('docker-compose --version', { stdio: 'ignore' });
+    log('✅ Docker Compose is available', 'green');
+    return true;
+  } catch (error) {
+    log('❌ Docker Compose not found', 'red');
+    log('🔧 Please install Docker Compose', 'yellow');
+    return false;
+  }
+}
+
+function checkDockerComposeFile() {
+  const composePath = path.join(__dirname, '..', 'docker-compose.yml');
+  if (!fs.existsSync(composePath)) {
+    log('❌ docker-compose.yml not found', 'red');
+    log('🔧 Please ensure docker-compose.yml exists in the project root', 'yellow');
+    return false;
+  }
+  log('✅ docker-compose.yml found', 'green');
+  return true;
+}
+
+function startQdrantServices() {
+  log('🐳 Starting Qdrant and PostgreSQL services...', 'blue');
+  try {
+    execSync('docker-compose up -d qdrant postgres', {
+      stdio: 'pipe',
+      cwd: path.join(__dirname, '..')
+    });
+    log('✅ Docker services started', 'green');
+    return true;
+  } catch (error) {
+    log('❌ Failed to start Docker services', 'red');
+    log('🔧 Check if Docker is running and ports are available', 'yellow');
+    return false;
+  }
+}
+
+function waitForQdrant() {
+  log('⏳ Waiting for Qdrant to be ready...', 'yellow');
+  return new Promise((resolve) => {
+    let attempts = 0;
+    const maxAttempts = 30; // 30 seconds
+    
+    const checkQdrant = () => {
+      attempts++;
+      try {
+        execSync('curl -s http://localhost:6333/collections', { timeout: 2000 });
+        log('✅ Qdrant is ready', 'green');
+        resolve(true);
+      } catch (error) {
+        if (attempts >= maxAttempts) {
+          log('❌ Qdrant failed to start within 30 seconds', 'red');
+          resolve(false);
+        } else {
+          setTimeout(checkQdrant, 1000);
+        }
+      }
+    };
+    
+    checkQdrant();
+  });
 }
 
 function checkDependencies() {
@@ -88,6 +150,20 @@ function checkPrisma() {
   } catch (error) {
     log('❌ Prisma not configured', 'red');
     log('🔧 Run: npx prisma generate && npx prisma migrate dev', 'yellow');
+    return false;
+  }
+}
+
+async function testQdrant() {
+  log('🧪 Testing Qdrant connection...', 'blue');
+  try {
+    execSync('npm run test:qdrant', {
+      stdio: 'inherit',
+      cwd: path.join(__dirname, '..')
+    });
+    return true;
+  } catch (error) {
+    log('❌ Qdrant connection test failed', 'red');
     return false;
   }
 }
@@ -131,7 +207,8 @@ function startServices() {
       log('\n🎉 EchoSoul is starting up!', 'green');
       log('📱 Frontend: http://localhost:3000', 'cyan');
       log('🔧 Backend API: http://localhost:3001', 'cyan');
-      log('🗄️  ChromaDB: http://localhost:8000', 'cyan');
+      log('🗄️  Qdrant: http://localhost:6333', 'cyan');
+      log('🐘 PostgreSQL: localhost:5432', 'cyan');
       log('\n💡 Press Ctrl+C to stop all services\n', 'yellow');
     }, 3000);
     
@@ -142,6 +219,18 @@ function startServices() {
     log('\n🛑 Shutting down services...', 'yellow');
     backend.kill();
     frontend.kill();
+    
+    // Stop Docker services
+    try {
+      execSync('docker-compose down', {
+        stdio: 'pipe',
+        cwd: path.join(__dirname, '..')
+      });
+      log('✅ Docker services stopped', 'green');
+    } catch (error) {
+      log('⚠️  Could not stop Docker services', 'yellow');
+    }
+    
     process.exit(0);
   });
 }
@@ -155,7 +244,9 @@ async function main() {
     { name: 'Environment file', fn: checkEnvFile },
     { name: 'Dependencies', fn: checkDependencies },
     { name: 'Prisma setup', fn: checkPrisma },
-    { name: 'ChromaDB connection', fn: checkChromaDB }
+    { name: 'Docker', fn: checkDocker },
+    { name: 'Docker Compose', fn: checkDockerCompose },
+    { name: 'Docker Compose file', fn: checkDockerComposeFile }
   ];
   
   let allPassed = true;
@@ -169,17 +260,30 @@ async function main() {
     log(''); // Empty line
   }
   
-  if (!allPassed) {
+  if (allPassed) {
+    log('\n✅ All checks passed!', 'green');
+    
+    // Start Docker services
+    if (!startQdrantServices()) {
+      process.exit(1);
+    }
+    
+    // Wait for Qdrant and test connection
+    if (await waitForQdrant()) {
+      if (!(await testQdrant())) {
+        process.exit(1);
+      }
+    } else {
+      process.exit(1);
+    }
+    
+    // Start main services
+    startServices();
+    
+  } else {
     log('❌ Some checks failed. Please fix the issues above before starting.', 'red');
     process.exit(1);
   }
-  
-  log('✅ All checks passed!', 'green');
-  log('🚀 Starting services...', 'blue');
-  
-  startServices();
 }
 
-if (require.main === module) {
-  main().catch(console.error);
-} 
+main();
