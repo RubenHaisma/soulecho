@@ -17,9 +17,10 @@ export default function PricingPage() {
   const [isPremium, setIsPremium] = useState(false);
   const [isCanceled, setIsCanceled] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState(null);
+  const [currentPlan, setCurrentPlan] = useState<{ currentPeriodEnd?: string } | null>(null);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -28,7 +29,7 @@ export default function PricingPage() {
   };
 
   const handleSubscribe = async (priceId: string) => {
-    if (!session) {
+    if (!session?.user?.id) {
       window.location.href = '/auth/signin';
       return;
     }
@@ -61,7 +62,7 @@ export default function PricingPage() {
   };
 
   const handleUpgrade = async () => {
-    if (!session) {
+    if (!session?.user?.id) {
       window.location.href = '/auth/signin';
       return;
     }
@@ -90,7 +91,7 @@ export default function PricingPage() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!session) {
+    if (!session?.user?.id) {
       window.location.href = '/auth/signin';
       return;
     }
@@ -120,7 +121,7 @@ export default function PricingPage() {
   };
 
   const handleReactivateSubscription = async () => {
-    if (!session) {
+    if (!session?.user?.id) {
       window.location.href = '/auth/signin';
       return;
     }

@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+dist
+.next
+*.md
+.git
+.gitignore
+Dockerfile
+.dockerignore
+.idea
+.vscode
+coverage
+.env
+*.sqlite3 

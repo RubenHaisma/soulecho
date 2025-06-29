@@ -46,19 +46,22 @@ class VectorStoreService {
     const collectionName = `session_${sessionId}`;
     
     try {
-      // Try to get existing collection first
-      try {
-        return await this.client.getCollection({ name: collectionName });
-      } catch {
-        // Collection doesn't exist, create it
-        return await this.client.createCollection({
-          name: collectionName,
-          metadata
-        });
-      }
+      // Create collection (will throw if it already exists, which is fine)
+      return await this.client.createCollection({
+        name: collectionName,
+        metadata
+      });
     } catch (error) {
-      console.error('Error creating collection:', error);
-      throw new Error('Failed to create vector collection');
+      // If collection already exists, try to get it
+      try {
+        return await this.client.getCollection({ 
+          name: collectionName,
+          embeddingFunction: null as any
+        });
+      } catch (getError) {
+        console.error('Error creating/getting collection:', error);
+        throw new Error('Failed to create vector collection');
+      }
     }
   }
 
@@ -113,7 +116,7 @@ class VectorStoreService {
         nResults: numResults
       });
 
-      return results.documents[0] || [];
+      return (results.documents[0] || []).filter((doc): doc is string => doc !== null);
     } catch (error) {
       console.error('Error searching similar messages:', error);
       throw new Error('Failed to search similar messages');

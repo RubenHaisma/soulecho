@@ -46,7 +46,6 @@ model User {
   stripeSubscriptionId   String?           @unique
   stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
-  subscriptionStatus     String            @default("free") // "free", "trial", "premium", "canceled"
   isTrialActive          Boolean           @default(true)
   trialChatsUsed         Int               @default(0)
   trialEndDate           DateTime?
@@ -55,6 +54,7 @@ model User {
   responseQualityLevel   Int               @default(100)
   tokensUsedToday        Int               @default(0)
   totalTokensUsed        Int               @default(0)
+  subscriptionStatus     String            @default("free")
   accounts               Account[]
   sessions               Session[]
   chatSessions           ChatSession[]

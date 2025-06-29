@@ -3,11 +3,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Type assertion for session user with id
+type SessionUser = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    const user = session?.user as SessionUser;
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -21,7 +30,7 @@ export async function GET(request: NextRequest) {
         where: {
           chatSessionId: sessionId,
           chatSession: {
-            userId: session.user.id
+            userId: user.id
           }
         },
         orderBy: {
@@ -36,7 +45,7 @@ export async function GET(request: NextRequest) {
       const conversations = await prisma.conversation.findMany({
         where: {
           chatSession: {
-            userId: session.user.id
+            userId: user.id
           }
         },
         include: {
@@ -138,7 +147,8 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = (session?.user as any)?.id || (session?.user as any)?.sub;
+    const user = session?.user as SessionUser;
+    const userId = user?.id;
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

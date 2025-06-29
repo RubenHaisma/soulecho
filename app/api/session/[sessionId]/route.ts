@@ -4,10 +4,10 @@ interface Params {
 
 export async function GET(
   request: Request,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { sessionId } = params;
+    const { sessionId } = await params;
     
     // Forward to backend server
     const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/session/${sessionId}`);

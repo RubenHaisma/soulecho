@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has disabled birthday notifications
-    if (user.preferences.notificationPreferences && user.preferences.notificationPreferences.birthday === false) {
+    const notificationPrefs = user.preferences.notificationPreferences as { birthday?: boolean } | null;
+    if (notificationPrefs && notificationPrefs.birthday === false) {
       return NextResponse.json({ message: 'Birthday notifications disabled by user' });
     }
 
