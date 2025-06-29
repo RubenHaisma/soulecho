@@ -72,6 +72,6 @@ ENTRYPOINT ["/sbin/tini", "--"]
 # overridden by providing FRONTEND_PORT and/or BACKEND_PORT when running the container.
 CMD ["sh", "-c", "\n  : ${FRONTEND_PORT:=3000}; \
   : ${BACKEND_PORT:=3001}; \
-  PORT=$BACKEND_PORT node backend/server.js & \
+  PORT=$BACKEND_PORT node backend/server_claude.js & \
   npx prisma migrate deploy && \
   npx next start -p $FRONTEND_PORT\n"] 
