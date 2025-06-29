@@ -74,4 +74,4 @@ CMD ["sh", "-c", "\n  : ${FRONTEND_PORT:=3000}; \
   : ${BACKEND_PORT:=3001}; \
   PORT=$BACKEND_PORT node backend/server.js & \
   npx prisma migrate deploy && \
-  next start -p $FRONTEND_PORT\n"] 
+  npx next start -p $FRONTEND_PORT\n"] 
