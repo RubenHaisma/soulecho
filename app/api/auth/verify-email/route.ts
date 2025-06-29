@@ -58,8 +58,9 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Redirect to success page
-    return NextResponse.redirect(new URL('/auth/email-verified', request.url));
+    // Redirect to success page using the correct base URL
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    return NextResponse.redirect(new URL('/auth/email-verified', baseUrl));
   } catch (error) {
     console.error('Email verification error:', error);
     return NextResponse.json(
