@@ -4,6 +4,9 @@
 # Use the official light-weight Node.js image to build the application
 FROM node:20-alpine AS builder
 
+# Install OpenSSL and other required dependencies for Prisma
+RUN apk add --no-cache openssl openssl-dev
+
 # Create app directory
 WORKDIR /app
 
@@ -31,8 +34,8 @@ RUN npm run build
 ###############################################
 FROM node:20-alpine
 
-# Install tini for proper signal handling
-RUN apk add --no-cache tini
+# Install OpenSSL and tini for proper signal handling
+RUN apk add --no-cache openssl tini
 
 # Set workdir
 WORKDIR /app
