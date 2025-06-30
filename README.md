@@ -17,7 +17,7 @@ A Next.js application that allows you to have conversations with AI-powered vers
 ## Tech Stack
 
 - **Frontend**: Next.js 15 with TypeScript
-- **Backend**: Express.js server
+- **API**: Next.js API routes
 - **Vector Database**: Qdrant
 - **Authentication**: NextAuth.js
 - **Styling**: Tailwind CSS with shadcn/ui
@@ -88,7 +88,7 @@ npm run docker:logs
 - `npm run start-all` - Start everything (recommended)
 - `npm run start-qdrant` - Alternative startup with Qdrant
 - `npm run dev` - Start only Next.js frontend
-- `npm run server` - Start only backend server
+- `npm run dev` - Start development server
 - `npm run docker:up` - Start Docker services only
 - `npm run docker:down` - Stop Docker services
 - `npm run docker:logs` - View Docker logs
@@ -98,7 +98,7 @@ npm run docker:logs
 When running locally:
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
+- **API**: http://localhost:3000/api
 - **Qdrant**: http://localhost:6333
 - **PostgreSQL**: localhost:5432
 - **Health Check**: http://localhost:3000/api/health
@@ -132,7 +132,7 @@ STRIPE_WEBHOOK_SECRET=your_webhook_secret
 ## 🏗️ Architecture
 
 - **Frontend**: Next.js 15 with TypeScript
-- **Backend**: Express.js server
+- **API**: Next.js API routes
 - **Vector Database**: Qdrant
 - **Database**: PostgreSQL with Prisma ORM
 - **AI**: OpenAI GPT-4 and embeddings

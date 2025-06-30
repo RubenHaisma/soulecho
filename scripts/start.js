@@ -204,7 +204,7 @@ function startServices() {
     setTimeout(() => {
       log('\n🎉 EchoSoul is starting up!', 'green');
       log('📱 Frontend: http://localhost:3000', 'cyan');
-      log('🔧 Backend API: http://localhost:3001', 'cyan');
+      log('🔧 API: http://localhost:3000/api', 'cyan');
       log('🗄️  Weaviate: http://localhost:8080', 'cyan');
       log('🐘 PostgreSQL: localhost:5432', 'cyan');
       log('\n💡 Press Ctrl+C to stop all services\n', 'yellow');
