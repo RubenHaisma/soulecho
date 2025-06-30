@@ -7,15 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "server": "node backend/server_claude.js",
-    "start-all": "node scripts/start.js",
-    "start-qdrant": "node scripts/start-qdrant.js",
-    "test:qdrant": "node scripts/test-qdrant.js",
     "setup": "cp .env.example .env && npm install && npx prisma generate",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:migrate": "npx prisma migrate dev",
+    "db:deploy": "npx prisma migrate deploy",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

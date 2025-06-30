@@ -1,23 +1,52 @@
 version: '3.8'
 
 services:
+  # SoulEcho Application (Next.js with integrated backend)
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: soulecho-app
+    environment:
+      # Database (external)
+      DATABASE_URL: ${DATABASE_URL}
+      
+      # Vector Database (external)
+      WEAVIATE_HOST: ${WEAVIATE_HOST}
+      
+      # API Keys
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      
+      # Authentication
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      
+      # Payment
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      
+      # Email
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      
+      # Application
+      NODE_ENV: production
+      PORT: 3000
     ports:
       - "3000:3000"
-      - "3001:3001"
-    environment:
-      - NODE_ENV=production
-      - WEAVIATE_HOST=${WEAVIATE_HOST}
-      - DATABASE_URL=${DATABASE_URL}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      - RESEND_API_KEY=${RESEND_API_KEY}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # If you need to connect to external databases on the same Docker network
+    # networks:
+    #   - external_network
 
-volumes:
-  weaviate_data:
-  postgres_data: 
+# If your external databases are on a specific Docker network
+# networks:
+#   external_network:
+#     external: true 

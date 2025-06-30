@@ -85,32 +85,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!chatSession) {
-      console.warn(`Chat session ${chatSessionId} not found, attempting to create from backend data`);
-      // Try to get session data from backend
-      try {
-        const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/session/${chatSessionId}`);
-        if (backendResponse.ok) {
-          const sessionData = await backendResponse.json();
-          // Create the chat session with minimal data
-          chatSession = await prisma.chatSession.create({
-            data: {
-              id: chatSessionId,
-              userId: 'temp-user-id', // Will need to be updated
-              personName: sessionData.personName || 'Unknown',
-              selectedPerson: sessionData.personName || 'Unknown',
-              messageCount: sessionData.messageCount || 0,
-              collectionName: `session_${chatSessionId}`,
-              createdAt: new Date(),
-              lastActivity: new Date(),
-              isActive: true
-            },
-          });
-          console.log(`Created missing chat session: ${chatSessionId}`);
-        }
-      } catch (error) {
-        console.error('Failed to create missing chat session:', error);
-        return NextResponse.json({ error: 'Chat session not found' }, { status: 404 });
-      }
+      console.warn(`Chat session ${chatSessionId} not found`);
+      return NextResponse.json({ error: 'Chat session not found' }, { status: 404 });
     }
 
     // Save conversation to database

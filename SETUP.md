@@ -44,7 +44,7 @@ OPENAI_API_KEY="sk-your-openai-api-key-here"
 CHROMA_URL="http://localhost:8000"
 
 # Backend API
-NEXT_PUBLIC_API_URL="http://localhost:3001"
+# NEXT_PUBLIC_API_URL is no longer needed - all API calls are now internal
 ```
 
 ### 3. Database Setup

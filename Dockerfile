@@ -28,14 +28,13 @@ RUN npx prisma generate
 # Build the Next.js application for production
 RUN npm run build
 
-
 ###############################################
 # ----------  Runtime stage  ---------- #
 ###############################################
 FROM node:20-alpine
 
 # Install OpenSSL and tini for proper signal handling
-RUN apk add --no-cache openssl tini
+RUN apk add --no-cache openssl tini curl
 
 # Set workdir
 WORKDIR /app
@@ -47,31 +46,29 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/backend ./backend
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/app ./app
 COPY --from=builder /app/lib ./lib
+COPY --from=builder /app/app ./app
 COPY --from=builder /app/components ./components
-COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/next.config.js ./next.config.js
 
 # Remove dev dependencies to keep image slim (succeeds even if none)
 RUN npm prune --production || true
 
 # Environment variables that can be overridden at runtime
-ENV FRONTEND_PORT=3000 \
-    BACKEND_PORT=3001 \
-    NODE_ENV=production
+ENV NODE_ENV=production \
+    PORT=3000
 
-# Optionally expose the default ports (can be overridden when the container is run)
-EXPOSE $FRONTEND_PORT $BACKEND_PORT
+# Expose the Next.js port
+EXPOSE $PORT
 
 # Use tini as the init system
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Start both the backend and the Next.js server.  Ports are NOT hard-coded and can be
-# overridden by providing FRONTEND_PORT and/or BACKEND_PORT when running the container.
-CMD ["sh", "-c", "\n  : ${FRONTEND_PORT:=3000}; \
-  : ${BACKEND_PORT:=3001}; \
-  PORT=$BACKEND_PORT node backend/server_claude.js & \
-  npx prisma migrate deploy && \
-  npx next start -p $FRONTEND_PORT\n"] 
+# Start Next.js application with database migrations
+CMD ["sh", "-c", "\
+  echo 'Starting SoulEcho application...'; \
+  echo 'Running database migrations...'; \
+  npx prisma migrate deploy; \
+  echo 'Starting Next.js server on port $PORT...'; \
+  npx next start -p $PORT"] 

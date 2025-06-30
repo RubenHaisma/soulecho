@@ -249,7 +249,7 @@ Supported formats:
       
       // Connect to real-time progress stream
       if (data.uploadId && data.sessionId) {
-        const progressUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/progress/${data.uploadId}`;
+        const progressUrl = `/api/progress/${data.uploadId}`;
         console.log('Connecting to progress stream:', progressUrl); // Debug log
         
         const eventSource = new EventSource(progressUrl);
@@ -261,7 +261,7 @@ Supported formats:
         eventSource.onmessage = (event) => {
           try {
             const progressData = JSON.parse(event.data);
-            console.log('Progress update:', progressData); // Debug log
+            console.log('📊 Progress update received:', progressData); // Debug log
             setProgress(progressData.progress);
             setProgressMessage(progressData.message || '');
             setTotalMessages(progressData.total || 0);
@@ -299,8 +299,9 @@ Supported formats:
         };
         
         eventSource.onerror = (error) => {
-          console.warn('Progress stream error:', error);
-          console.log('EventSource readyState:', eventSource.readyState); // Debug log
+          console.warn('❌ Progress stream error:', error);
+          console.log('🔍 EventSource readyState:', eventSource.readyState); // Debug log
+          console.log('🔍 EventSource URL:', eventSource.url); // Debug log
           eventSource.close();
           setError('Connection to processing server lost. Please try again.');
           setUploading(false);

@@ -53,55 +53,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // Get some sample messages from the vector database for context
-    let contextMessages: string[] = [];
-    let detectedLanguages: string[] = [];
-    try {
-      // Fetch session info from backend to get detectedLanguages
-      const backendSessionRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/session/${sessionId}`);
-      if (backendSessionRes.ok) {
-        const backendSession = await backendSessionRes.json();
-        detectedLanguages = backendSession.detectedLanguages || [];
-      }
-      // Generate a greeting in the correct language(s)
-      let greeting = 'hello';
-      if (detectedLanguages.length > 0) {
-        const greetingRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/generate-greeting`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ languages: detectedLanguages })
-        });
-        if (greetingRes.ok) {
-          const greetingData = await greetingRes.json();
-          greeting = greetingData.greeting || 'hello';
-        }
-      }
-      // Try to get context from vector database using the language-appropriate greeting
-      const vectorResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/context`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId,
-          query: greeting,
-          limit: 3
-        }),
-      });
-      if (vectorResponse.ok) {
-        const vectorData = await vectorResponse.json();
-        contextMessages = vectorData.context || [];
-      }
-    } catch (error) {
-      console.warn('Could not fetch vector context or greeting:', error);
-    }
-    // Fallback to recent conversations if no vector context
-    if (contextMessages.length === 0) {
-      contextMessages = (chatSession.conversations || [])
-        .slice(0, 3)
-        .map((conv: { userMessage: string; aiResponse: string }) => `${conv.userMessage}\n${conv.aiResponse}`)
-        .filter((msg: string) => msg.length > 10);
-    }
+    // Get detected languages from the chat session
+    const detectedLanguages: string[] = chatSession.detectedLanguages || [];
+    
+    // Use recent conversations as context (we already have this data)
+    let contextMessages: string[] = (chatSession.conversations || [])
+      .slice(0, 3)
+      .map((conv: { userMessage: string; aiResponse: string }) => `${conv.userMessage}\n${conv.aiResponse}`)
+      .filter((msg: string) => msg.length > 10);
     // Generate a personalized, fluent, advanced welcome message
     const contextText = contextMessages.length > 0 
       ? `\n\nRECENT CONVERSATION CONTEXT:\n${contextMessages.join('\n\n---\n\n')}`

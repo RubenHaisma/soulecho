@@ -21,7 +21,7 @@ CHROMA_URL="http://localhost:8000"
 PORT=3001
 
 # Next.js Configuration
-NEXT_PUBLIC_API_URL="http://localhost:3001"
+# NEXT_PUBLIC_API_URL is no longer needed - all API calls are now internal
 
 # NextAuth Configuration
 NEXTAUTH_URL="http://localhost:3000"
