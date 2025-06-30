@@ -143,17 +143,15 @@ export async function POST(request: Request) {
         
         // Get ALL messages from the collection by scrolling
         let allPoints = [];
-        let nextOffset = 0;
+        let nextOffset: number | null = 0;
         do {
           const scrollResponse = await weaviateClient.scroll(collectionName, {
             limit: 250,
-            with_payload: true,
-            with_vector: false,
-            offset: nextOffset
+            offset: nextOffset || 0
           });
           allPoints.push(...scrollResponse.points);
           nextOffset = scrollResponse.next_page_offset || null;
-        } while (nextOffset);
+        } while (nextOffset !== null);
 
         if (allPoints.length > 0) {
           const allMessages = allPoints.map(point => ({
@@ -186,7 +184,6 @@ export async function POST(request: Request) {
       const generalResults = await weaviateClient.search(sessionData.collectionName, {
         vector: userEmbedding,
         limit: 15,
-        with_payload: true,
         score_threshold: 0.5
       });
       
