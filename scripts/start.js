@@ -88,10 +88,10 @@ function checkDockerComposeFile() {
   return true;
 }
 
-function startQdrantServices() {
-  log('🐳 Starting Qdrant and PostgreSQL services...', 'blue');
+function startWeaviateServices() {
+  log('🐳 Starting Weaviate and PostgreSQL services...', 'blue');
   try {
-    execSync('docker-compose up -d qdrant postgres', {
+    execSync('docker-compose up -d weaviate postgres', {
       stdio: 'pipe',
       cwd: path.join(__dirname, '..')
     });
@@ -104,30 +104,42 @@ function startQdrantServices() {
   }
 }
 
-function waitForQdrant() {
-  log('⏳ Waiting for Qdrant to be ready...', 'yellow');
+function waitForWeaviate() {
+  log('⏳ Waiting for Weaviate to be ready...', 'yellow');
   return new Promise((resolve) => {
     let attempts = 0;
     const maxAttempts = 30; // 30 seconds
     
-    const checkQdrant = () => {
+    const checkWeaviate = () => {
       attempts++;
       try {
-        execSync('curl -s http://localhost:6333/collections', { timeout: 2000 });
-        log('✅ Qdrant is ready', 'green');
+        execSync('curl -s http://localhost:8080/v1/schema', { timeout: 2000 });
+        log('✅ Weaviate is ready', 'green');
         resolve(true);
       } catch (error) {
         if (attempts >= maxAttempts) {
-          log('❌ Qdrant failed to start within 30 seconds', 'red');
+          log('❌ Weaviate failed to start within 30 seconds', 'red');
           resolve(false);
         } else {
-          setTimeout(checkQdrant, 1000);
+          setTimeout(checkWeaviate, 1000);
         }
       }
     };
     
-    checkQdrant();
+    checkWeaviate();
   });
+}
+
+async function testWeaviate() {
+  log('🧪 Testing Weaviate connection...', 'blue');
+  try {
+    execSync('curl -sSf http://localhost:8080/v1/schema', { stdio: 'ignore' });
+    log('✅ Weaviate connection successful!', 'green');
+    return true;
+  } catch (error) {
+    log('❌ Weaviate connection test failed', 'red');
+    return false;
+  }
 }
 
 function checkDependencies() {
@@ -150,20 +162,6 @@ function checkPrisma() {
   } catch (error) {
     log('❌ Prisma not configured', 'red');
     log('🔧 Run: npx prisma generate && npx prisma migrate dev', 'yellow');
-    return false;
-  }
-}
-
-async function testQdrant() {
-  log('🧪 Testing Qdrant connection...', 'blue');
-  try {
-    execSync('npm run test:qdrant', {
-      stdio: 'inherit',
-      cwd: path.join(__dirname, '..')
-    });
-    return true;
-  } catch (error) {
-    log('❌ Qdrant connection test failed', 'red');
     return false;
   }
 }
@@ -207,7 +205,7 @@ function startServices() {
       log('\n🎉 EchoSoul is starting up!', 'green');
       log('📱 Frontend: http://localhost:3000', 'cyan');
       log('🔧 Backend API: http://localhost:3001', 'cyan');
-      log('🗄️  Qdrant: http://localhost:6333', 'cyan');
+      log('🗄️  Weaviate: http://localhost:8080', 'cyan');
       log('🐘 PostgreSQL: localhost:5432', 'cyan');
       log('\n💡 Press Ctrl+C to stop all services\n', 'yellow');
     }, 3000);
@@ -264,13 +262,13 @@ async function main() {
     log('\n✅ All checks passed!', 'green');
     
     // Start Docker services
-    if (!startQdrantServices()) {
+    if (!startWeaviateServices()) {
       process.exit(1);
     }
     
-    // Wait for Qdrant and test connection
-    if (await waitForQdrant()) {
-      if (!(await testQdrant())) {
+    // Wait for Weaviate and test connection
+    if (await waitForWeaviate()) {
+      if (!(await testWeaviate())) {
         process.exit(1);
       }
     } else {

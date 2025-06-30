@@ -4,14 +4,14 @@ import { vectorStore } from '@/lib/vector-store';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check Qdrant connection
-    const qdrantHealthy = await vectorStore.healthCheck();
+    // Check Weaviate connection
+    const weaviateHealthy = await vectorStore.healthCheck();
     
     const healthCheck = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       services: {
-        qdrant: qdrantHealthy ? 'healthy' : 'unhealthy',
+        weaviate: weaviateHealthy ? 'healthy' : 'unhealthy',
         database: 'checking...',
         openai: process.env.OPENAI_API_KEY ? 'configured' : 'not_configured',
         resend: 'checking...'

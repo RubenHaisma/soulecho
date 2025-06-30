@@ -1,5 +1,6 @@
-import { QdrantClient } from '@qdrant/js-client-rest';
 import { OpenAI } from 'openai';
+// @ts-ignore - weaviate types may not be available at build time
+import weaviate from 'weaviate-ts-client';
 
 interface MessageEmbedding {
   content: string;
@@ -10,32 +11,33 @@ interface MessageEmbedding {
   };
 }
 
-interface QdrantPoint {
-  id: string;
-  vector: number[];
-  payload: {
-    content: string;
-    timestamp: string;
-    sender: string;
-  };
-}
-
-interface QdrantSearchResult {
-  payload?: {
-    content: string;
-    timestamp: string;
-    sender: string;
-  };
-}
-
 class VectorStoreService {
-  private client: QdrantClient;
+  private client: any;
   private openai: OpenAI;
 
   constructor() {
-    this.client = new QdrantClient({
-      url: process.env.QDRANT_URL || 'http://localhost:6333'
-    });
+    // Initialize Weaviate client
+    const hostEnv = process.env.WEAVIATE_HOST || 'http://localhost:8080';
+    const url = new URL(hostEnv);
+
+    const baseConfig: any = {
+      scheme: url.protocol.replace(':', ''),
+      host: url.host,
+    };
+
+    if (process.env.WEAVIATE_API_KEY) {
+      // Include API key if provided; avoid hard dependency on ApiKey class
+      try {
+        const { ApiKey } = require('weaviate-ts-client');
+        baseConfig.apiKey = new ApiKey(process.env.WEAVIATE_API_KEY);
+      } catch {
+        // Fallback: pass raw key string (works in newer client versions)
+        baseConfig.apiKey = process.env.WEAVIATE_API_KEY;
+      }
+    }
+
+    // @ts-ignore – dynamic import may not yield perfect typings
+    this.client = weaviate.client(baseConfig);
     
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY || ''
@@ -55,33 +57,36 @@ class VectorStoreService {
     }
   }
 
-  async createCollection(sessionId: string, metadata: any): Promise<void> {
-    const collectionName = `session_${sessionId}`;
-    
+  async createCollection(sessionId: string, _metadata: any): Promise<void> {
+    // Weaviate class names must start with a capital letter and contain only letters, numbers, and underscore
+    const className = `Session_${sessionId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
     try {
-      // Check if collection exists
-      const collections = await this.client.getCollections();
-      const exists = collections.collections.some((c: any) => c.name === collectionName);
-      
+      const schema = await this.client.schema.getter().do();
+      const exists = schema.classes?.some((c: any) => c.class === className);
+
       if (!exists) {
-        // Create collection with proper configuration
-        await this.client.createCollection(collectionName, {
-          vectors: {
-            size: 1536, // OpenAI text-embedding-3-small dimension
-            distance: 'Cosine'
-          }
-        });
-        
-        // Add metadata to collection
-        await this.client.updateCollection(collectionName, {
-          optimizers_config: {
-            default_segment_number: 2
-          }
-        });
+        await this.client.schema
+          .classCreator()
+          .withClass({
+            class: className,
+            description: `Chat messages for session ${sessionId}`,
+            vectorizer: 'none',
+            vectorIndexType: 'hnsw',
+            vectorIndexConfig: {
+              distance: 'cosine',
+            },
+            properties: [
+              { name: 'content', dataType: ['text'] },
+              { name: 'timestamp', dataType: ['text'] },
+              { name: 'sender', dataType: ['text'] },
+            ],
+          })
+          .do();
       }
     } catch (error) {
-      console.error('Error creating collection:', error);
-      throw new Error('Failed to create vector collection');
+      console.error('Error creating Weaviate class:', error);
+      throw new Error('Failed to create vector class');
     }
   }
 
@@ -89,43 +94,40 @@ class VectorStoreService {
     sessionId: string, 
     messages: Array<{ content: string; timestamp: string; sender: string }>
   ): Promise<void> {
-    const collectionName = `session_${sessionId}`;
-    const points: QdrantPoint[] = [];
+    const collectionName = `Session_${sessionId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const objects: any[] = [];
 
     for (let i = 0; i < messages.length; i++) {
       const message = messages[i];
       try {
         const embedding = await this.createEmbedding(message.content);
-        points.push({
+        objects.push({
+          class: collectionName,
           id: `msg_${i}_${Date.now()}`,
-          vector: embedding,
-          payload: {
+          properties: {
             content: message.content,
             timestamp: message.timestamp,
-            sender: message.sender
-          }
+            sender: message.sender,
+          },
+          vector: embedding,
         });
       } catch (error) {
         console.error(`Error creating embedding for message ${i}:`, error);
-        // Continue with other messages
       }
     }
 
-    if (points.length === 0) {
+    if (objects.length === 0) {
       throw new Error('Failed to create any embeddings');
     }
 
     try {
-      // Upload points in batches to avoid memory issues
-      const batchSize = 100;
-      for (let i = 0; i < points.length; i += batchSize) {
-        const batch = points.slice(i, i + batchSize);
-        await this.client.upsert(collectionName, {
-          points: batch
-        });
+      const batcher = this.client.batch.objectsBatcher();
+      for (const obj of objects) {
+        batcher.withObject(obj);
       }
+      await batcher.do();
     } catch (error) {
-      console.error('Error adding messages to collection:', error);
+      console.error('Error adding objects to Weaviate:', error);
       throw new Error('Failed to add messages to vector store');
     }
   }
@@ -135,21 +137,20 @@ class VectorStoreService {
     query: string, 
     numResults: number = 5
   ): Promise<string[]> {
-    const collectionName = `session_${sessionId}`;
+    const collectionName = `Session_${sessionId.replace(/[^a-zA-Z0-9]/g, '_')}`;
     
     try {
       const queryEmbedding = await this.createEmbedding(query);
       
-      const results = await this.client.search(collectionName, {
-        vector: queryEmbedding,
-        limit: numResults,
-        with_payload: true
-      });
+      const gqlResult: any = await this.client.graphql.get()
+        .withClassName(collectionName)
+        .withFields('content timestamp sender')
+        .withNearVector({ vector: queryEmbedding })
+        .withLimit(numResults)
+        .do();
 
-      return results.map((result: any) => {
-        const payload = result.payload as any;
-        return payload?.content || '';
-      }).filter(Boolean);
+      const data = gqlResult?.data?.Get?.[collectionName] || [];
+      return data.map((d: any) => d.content).filter(Boolean);
     } catch (error) {
       console.error('Error searching similar messages:', error);
       throw new Error('Failed to search similar messages');
@@ -170,13 +171,14 @@ class VectorStoreService {
         queryEmbedding = query;
       }
       
-      const results = await this.client.search(collectionName, {
-        vector: queryEmbedding,
-        limit: topK,
-        with_payload: true
-      });
+      const gqlResult: any = await this.client.graphql.get()
+        .withClassName(collectionName)
+        .withFields('content timestamp sender')
+        .withNearVector({ vector: queryEmbedding })
+        .withLimit(topK)
+        .do();
 
-      return results;
+      return gqlResult?.data?.Get?.[collectionName] || [];
     } catch (error) {
       console.error('Error searching messages:', error);
       throw new Error('Failed to search messages');
@@ -185,14 +187,14 @@ class VectorStoreService {
 
   async getCollection(collectionName: string): Promise<any> {
     try {
-      const collections = await this.client.getCollections();
-      const collection = collections.collections.find((c: any) => c.name === collectionName);
-      
-      if (!collection) {
-        throw new Error(`Collection ${collectionName} not found`);
+      const schema = await this.client.schema.getter().do();
+      const cls = schema.classes?.find((c: any) => c.class === collectionName);
+
+      if (!cls) {
+        throw new Error(`Class ${collectionName} not found`);
       }
-      
-      return collection;
+
+      return cls;
     } catch (error) {
       console.error('Error getting collection:', error);
       throw new Error('Failed to get collection');
@@ -200,10 +202,10 @@ class VectorStoreService {
   }
 
   async deleteCollection(sessionId: string): Promise<void> {
-    const collectionName = `session_${sessionId}`;
+    const collectionName = `Session_${sessionId.replace(/[^a-zA-Z0-9]/g, '_')}`;
     
     try {
-      await this.client.deleteCollection(collectionName);
+      await this.client.schema.classDeleter().withClassName(collectionName).do();
     } catch (error) {
       console.error('Error deleting collection:', error);
       // Don't throw error for cleanup operations
@@ -257,10 +259,10 @@ Respond as ${personName} would, staying true to their character and the relation
 
   async healthCheck(): Promise<boolean> {
     try {
-      await this.client.getCollections();
+      await this.client.schema.getter().do();
       return true;
     } catch (error) {
-      console.error('Qdrant health check failed:', error);
+      console.error('Weaviate health check failed:', error);
       return false;
     }
   }

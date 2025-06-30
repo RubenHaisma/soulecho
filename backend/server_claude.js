@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
-const { QdrantClient } = require('@qdrant/js-client-rest');
 const { OpenAI } = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const path = require('path');
@@ -28,12 +27,131 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
 
-// Initialize Qdrant client
-const qdrantClient = new QdrantClient({
-  url: process.env.QDRANT_URL || 'http://localhost:6333',
-  apiKey: process.env.QDRANT_API_KEY,
-  checkCompatibility: false,
+// Initialize Weaviate client (wrapper keeps existing variable name for minimal changes)
+const weaviateHost = process.env.WEAVIATE_HOST || 'http://localhost:8080';
+const weaviateUrl = new URL(weaviateHost);
+
+// Handle both CommonJS and ESM builds of weaviate-ts-client
+const weaviateModule = require('weaviate-ts-client');
+const weaviate = weaviateModule.default || weaviateModule;
+const ApiKeyCtor = weaviateModule.ApiKey || (weaviate ? weaviate.ApiKey : undefined);
+
+const wvClient = weaviate.client({
+  scheme: weaviateUrl.protocol.replace(':', ''),
+  host: weaviateUrl.host,
+  apiKey: process.env.WEAVIATE_API_KEY && ApiKeyCtor ? new ApiKeyCtor(process.env.WEAVIATE_API_KEY) : undefined,
 });
+
+// Helper to convert collection name to a valid Weaviate class name (must start with capital letter)
+function toClassName(collectionName) {
+  if (collectionName.startsWith('session_')) {
+    return 'Session_' + collectionName.replace('session_', '').replace(/[^a-zA-Z0-9]/g, '_');
+  }
+  // Fallback: ensure capitalised
+  const safe = collectionName.replace(/[^a-zA-Z0-9]/g, '_');
+  return safe.charAt(0).toUpperCase() + safe.slice(1);
+}
+
+// Wrapper object exposing the same API surface the rest of the file expects
+const qdrantClient = {
+  async getCollection(collectionName) {
+    const className = toClassName(collectionName);
+    const schema = await wvClient.schema.getter().do();
+    const cls = (schema.classes || []).find(c => c.class === className);
+    if (!cls) throw new Error(`Class ${className} not found`);
+    return cls;
+  },
+
+  async createCollection(collectionName, { vectors }) {
+    const className = toClassName(collectionName);
+    const schema = await wvClient.schema.getter().do();
+    const exists = (schema.classes || []).some(c => c.class === className);
+    if (exists) return;
+
+    await wvClient.schema.classCreator().withClass({
+      class: className,
+      description: `Chat messages for ${collectionName}`,
+      vectorizer: 'none',
+      vectorIndexType: 'hnsw',
+      vectorIndexConfig: {
+        distance: (vectors && vectors.distance && vectors.distance.toLowerCase() === 'cosine') ? 'cosine' : 'l2',
+      },
+      properties: [
+        { name: 'content', dataType: ['text'] },
+        { name: 'timestamp', dataType: ['text'] },
+        { name: 'sender', dataType: ['text'] },
+      ],
+    }).do();
+  },
+
+  async upsert(collectionName, { points }) {
+    if (!points || points.length === 0) return;
+    const className = toClassName(collectionName);
+    const batcher = wvClient.batch.objectsBatcher();
+    points.forEach(pt => {
+      batcher.withObject({
+        class: className,
+        id: pt.id,
+        properties: pt.payload,
+        vector: pt.vector,
+      });
+    });
+    await batcher.do();
+  },
+
+  async search(collectionName, { vector, limit = 10, with_payload = true, score_threshold = 0.0 }) {
+    const className = toClassName(collectionName);
+    const res = await wvClient.graphql.get()
+      .withClassName(className)
+      .withFields(`content timestamp sender _additional { distance }`)
+      .withNearVector({ vector })
+      .withLimit(limit)
+      .do();
+
+    const objs = res?.data?.Get?.[className] || [];
+    // Convert to Qdrant-like response shape
+    return objs.map(obj => ({
+      payload: {
+        content: obj.content,
+        timestamp: obj.timestamp,
+        sender: obj.sender,
+      },
+      score: 1 - (obj._additional?.distance ?? 1),
+    })).filter(p => p.score >= score_threshold);
+  },
+
+  async scroll(collectionName, { limit = 250, offset = 0, with_payload = true, with_vector = false }) {
+    const className = toClassName(collectionName);
+    // Weaviate GraphQL doesn't support offset directly; fetch limit + offset by skipping
+    const res = await wvClient.graphql.get()
+      .withClassName(className)
+      .withFields(`content timestamp sender _additional { id }`)
+      .withLimit(limit + offset)
+      .do();
+
+    const objs = res?.data?.Get?.[className] || [];
+    const sliced = objs.slice(offset, offset + limit);
+    const points = sliced.map(obj => ({
+      payload: {
+        content: obj.content,
+        timestamp: obj.timestamp,
+        sender: obj.sender,
+      },
+    }));
+
+    const next_page_offset = objs.length > offset + limit ? offset + limit : null;
+    return { points, next_page_offset };
+  },
+
+  async deleteCollection(collectionName) {
+    const className = toClassName(collectionName);
+    try {
+      await wvClient.schema.classDeleter().withClassName(className).do();
+    } catch (err) {
+      // ignore if not exist
+    }
+  }
+};
 
 // Validate required environment variables
 if (!process.env.OPENAI_API_KEY) {
@@ -51,7 +169,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 console.log('🚀 Starting EchoSoul backend server...');
-console.log(`📍 Qdrant URL: ${process.env.QDRANT_URL || 'http://localhost:6333'}`);
+console.log(`📍 Weaviate Host: ${process.env.WEAVIATE_HOST || 'http://localhost:8080'}`);
 console.log(`🔑 OpenAI API Key (for embeddings): ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`);
 console.log(`🤖 Anthropic API Key (for chat): ${process.env.ANTHROPIC_API_KEY ? '✅ Set' : '❌ Not set'}`);
 
@@ -423,7 +541,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     if (error.message.includes('API key')) {
       return res.status(500).json({ error: 'OpenAI API configuration error. Please check your API key.' });
     } else if (error.message.includes('Qdrant') || error.message.includes('collection')) {
-      return res.status(500).json({ error: 'Vector database error. Please ensure Qdrant is running.' });
+      return res.status(500).json({ error: 'Vector database error. Please ensure Weaviate is running.' });
     } else if (error.message.includes('embedding')) {
       return res.status(500).json({ error: 'Failed to process messages for AI. Please try again.' });
     }
@@ -496,7 +614,7 @@ async function processFileAsync(sessionId, uploadId, fileContent, selectedPerson
       processed: 0
     });
 
-    // Create Qdrant collection for this session
+    // Create Weaviate class for this session
     console.log('🗄️  Creating vector database collection...');
     const collectionName = `session_${sessionId}`;
     try {
@@ -836,7 +954,7 @@ app.get('/api/session/:sessionId', async (req, res) => {
           console.log(`✅ Loaded ${allMessages.length} messages for session ${sessionId}`);
         }
       } catch (error) {
-        console.warn('⚠️ Failed to load full dataset from Qdrant:', error.message);
+        console.warn('⚠️ Failed to load full dataset from Weaviate:', error.message);
       }
     }
 
@@ -2889,7 +3007,7 @@ const cleanupSessions = async () => {
   for (const [sessionId, session] of sessions.entries()) {
     if (now - session.lastActivity > maxAge) {
       try {
-        // Delete Qdrant collection
+        // Delete Weaviate class
         await qdrantClient.deleteCollection(session.collectionName);
         
         // Remove from sessions
@@ -3046,5 +3164,5 @@ function extractWorkInfoFromHistory(conversationHistory) {
 
 app.listen(port, () => {
   console.log(`EchoSoul backend server running on port ${port}`);
-  console.log('Make sure Qdrant is running on http://localhost:6333');
+  console.log('Make sure Weaviate is running on http://localhost:8080 (or set WEAVIATE_HOST)');
 });

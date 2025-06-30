@@ -31,7 +31,7 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 console.log('🚀 Starting EchoSoul backend server...');
-console.log(`📍 Qdrant URL: ${process.env.QDRANT_URL || 'http://localhost:6333'}`);
+console.log(`📍 Weaviate Host: ${process.env.WEAVIATE_HOST || 'http://localhost:8080'}`);
 console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`);
 
 // Test OpenAI connection on startup
@@ -52,13 +52,13 @@ if (process.env.OPENAI_API_KEY) {
   try {
     const isHealthy = await vectorStore.healthCheck();
     if (isHealthy) {
-      console.log('✅ Qdrant vector database connection verified');
+      console.log('✅ Weaviate vector database connection verified');
     } else {
-      console.error('❌ Qdrant vector database connection failed');
+      console.error('❌ Weaviate vector database connection failed');
     }
   } catch (error) {
-    console.error('❌ Qdrant vector database connection failed:', error.message);
-    console.log('💡 Please ensure Qdrant is running and accessible');
+    console.error('❌ Weaviate vector database connection failed:', error.message);
+    console.log('💡 Please ensure Weaviate is running and accessible');
   }
 })();
 
@@ -2748,5 +2748,5 @@ app.post('/api/context', async (req, res) => {
 
 app.listen(port, () => {
   console.log(`EchoSoul backend server running on port ${port}`);
-  console.log('Make sure Qdrant is running on http://localhost:6333');
+  console.log('Make sure Weaviate is running on http://localhost:8080 (or set WEAVIATE_HOST)');
 });
