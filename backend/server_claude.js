@@ -31,6 +31,13 @@ const anthropic = new Anthropic({
 const weaviateHost = process.env.WEAVIATE_HOST || 'http://localhost:8080';
 const weaviateUrl = new URL(weaviateHost);
 
+// Debug logging for Weaviate connection
+console.log('🛠️  Weaviate client configuration:');
+console.log('   - weaviateHost:', weaviateHost);
+console.log('   - weaviateUrl.protocol:', weaviateUrl.protocol);
+console.log('   - weaviateUrl.host:', weaviateUrl.host);
+console.log('   - Full URL:', `${weaviateUrl.protocol}//${weaviateUrl.host}`);
+
 // Handle both CommonJS and ESM builds of weaviate-ts-client
 const weaviateModule = require('weaviate-ts-client');
 const weaviate = weaviateModule.default || weaviateModule;
