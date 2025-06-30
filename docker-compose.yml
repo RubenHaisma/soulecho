@@ -8,7 +8,7 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
-      - WEAVIATE_HOST=https://talkers.pro:8080
+      - WEAVIATE_HOST=${WEAVIATE_HOST}
       - DATABASE_URL=${DATABASE_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
@@ -16,32 +16,6 @@ services:
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - RESEND_API_KEY=${RESEND_API_KEY}
-    depends_on:
-      - weaviate
-      - postgres
-    restart: unless-stopped
-
-  weaviate:
-    image: semitechnologies/weaviate:1.23.9
-    ports:
-      - ":8080"
-    volumes:
-      - weaviate_data:/var/lib/weaviate
-    environment:
-      # Allow anonymous access for local development – tighten in production
-      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
-      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
-      - QUERY_DEFAULTS_LIMIT=25
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB:-soulecho}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
