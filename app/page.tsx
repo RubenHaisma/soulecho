@@ -327,8 +327,8 @@ export default function HomePage() {
               <Link href="/privacy" className="text-gray-500 hover:text-purple-600 transition-colors duration-300 hover:underline">
                 Privacy Policy
               </Link>
-              <Link href="/support" className="text-gray-500 hover:text-purple-600 transition-colors duration-300 hover:underline">
-                Support
+              <Link href="/contact" className="text-gray-500 hover:text-purple-600 transition-colors duration-300 hover:underline">
+                Contact
               </Link>
               <Link href="/about" className="text-gray-500 hover:text-purple-600 transition-colors duration-300 hover:underline">
                 About

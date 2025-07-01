@@ -222,13 +222,13 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
             Welcome back, {session?.user?.name?.split(' ')[0]}
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-base sm:text-xl text-gray-600">
             Your sacred conversations await
           </p>
         </div>
@@ -237,11 +237,11 @@ export default function DashboardPage() {
         <BirthdayNotification />
 
         {/* Trial Status */}
-        {stats.subscriptionStatus !== 'premium' && <TrialStatus className="mb-6" />}
+        {stats.subscriptionStatus !== 'premium' && <TrialStatus className="mb-4 sm:mb-6" />}
 
         {/* Trial Experience Summary */}
         {stats.subscriptionStatus !== 'premium' && (
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <TrialExperienceSummary 
               trialProgress={stats.daysLeft ? (3 - stats.daysLeft) / 3 : 1}
               qualityLevel={stats.isTrialActive ? Math.max(40, 100 - (3 - stats.daysLeft) * 20) : 10}
@@ -253,12 +253,12 @@ export default function DashboardPage() {
         )}
 
         {/* Dashboard Navigation */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <DashboardNav />
         </div>
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -331,32 +331,31 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Content */}
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Chat Sessions */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Your Conversations</h3>
+          <div className="order-2 lg:order-1 lg:col-span-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-900">Your Conversations</h3>
               <Link href="/upload">
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-lg">
+                <Button className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-lg py-2 px-4 text-base">
                   <Plus className="w-4 h-4 mr-2" />
                   New Conversation
                 </Button>
               </Link>
             </div>
-
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {chatSessions.length === 0 ? (
                 <Card className="border-0 bg-white/40 backdrop-blur-md shadow-lg">
-                  <CardContent className="p-12 text-center">
+                  <CardContent className="p-8 sm:p-12 text-center">
                     <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
                       <MessageCircle className="w-8 h-8 text-gray-500" />
                     </div>
-                    <h4 className="text-xl font-semibold text-gray-800 mb-2">No conversations yet</h4>
+                    <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">No conversations yet</h4>
                     <p className="text-gray-600 mb-6">
                       Start your first sacred conversation by uploading a WhatsApp chat
                     </p>
                     <Link href="/upload">
-                      <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full">
+                      <Button className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full">
                         <Plus className="w-4 h-4 mr-2" />
                         Create First Conversation
                       </Button>
@@ -366,17 +365,17 @@ export default function DashboardPage() {
               ) : (
                 chatSessions.map((session) => (
                   <Card key={session.id} className="border-0 bg-white/60 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-400">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                          <Avatar className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-blue-400">
                             <AvatarFallback className="text-white font-semibold">
                               {session.personName.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <h4 className="text-lg font-semibold text-gray-900">{session.personName}</h4>
-                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="min-w-0">
+                            <h4 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{session.personName}</h4>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-600 mt-1">
                               <span className="flex items-center gap-1">
                                 <MessageCircle className="w-3 h-3" />
                                 {session.conversations.length} conversations
@@ -394,18 +393,16 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-row sm:flex-col gap-2 mt-2 sm:mt-0">
                           {session.isActive && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              Active
-                            </Badge>
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 px-2 py-1 text-xs sm:text-sm">Active</Badge>
                           )}
-                          <Link href={`/chat/${session.id}`}>
-                            <Button variant="outline" className="rounded-full">
+                          <Link href={`/chat/${session.id}`} className="flex-1">
+                            <Button variant="outline" className="w-full sm:w-auto rounded-full py-2 px-3 text-xs sm:text-base">
                               Continue
                             </Button>
                           </Link>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSession(session.id)} title="Delete conversation">
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSession(session.id)} title="Delete conversation" className="w-10 h-10">
                             <Trash2 className="w-5 h-5 text-red-500" />
                           </Button>
                         </div>
@@ -418,7 +415,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="order-1 lg:order-2 mb-6 lg:mb-0 space-y-4 sm:space-y-6">
             {/* Quick Actions */}
             <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
               <CardHeader>

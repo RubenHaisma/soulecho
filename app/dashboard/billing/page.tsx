@@ -99,16 +99,16 @@ export default function BillingPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Billing History</h1>
-          <p className="text-xl text-gray-600">
+      <main className="max-w-4xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">Billing History</h1>
+          <p className="text-base sm:text-xl text-gray-600">
             View and download your Stripe invoices
           </p>
         </div>
 
         {/* Dashboard Navigation */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <DashboardNav />
         </div>
 

@@ -179,21 +179,21 @@ export default function AnalyticsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Analytics Overview</h1>
-          <p className="text-xl text-gray-600">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">Analytics Overview</h1>
+          <p className="text-base sm:text-xl text-gray-600">
             Insights into your conversations and emotional journey
           </p>
         </div>
 
         {/* Dashboard Navigation */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <DashboardNav />
         </div>
 
         {/* Overview Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Insights Section */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-8">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Emotional Insights */}
           <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
             <CardHeader>

@@ -257,16 +257,16 @@ export default function SubscriptionPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Subscription Management</h1>
-          <p className="text-xl text-gray-600">
-            Manage your Talkers subscription and billing
+      <main className="max-w-4xl mx-auto px-2 sm:px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">Subscription</h1>
+          <p className="text-base sm:text-xl text-gray-600">
+            Manage your plan and see your usage
           </p>
         </div>
 
         {/* Dashboard Navigation */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <DashboardNav />
         </div>
 

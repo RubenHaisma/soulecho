@@ -71,112 +71,98 @@ export function ContactForm() {
 
   if (isSubmitted) {
     return (
-      <Card className="w-full max-w-lg mx-auto">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-            <h3 className="text-xl font-semibold">Message Sent!</h3>
-            <p className="text-muted-foreground">
-                             Thank you for reaching out. We&apos;ve received your message and will get back to you as soon as possible.
-            </p>
-            <Button 
-              onClick={() => setIsSubmitted(false)} 
-              variant="outline"
-              className="mt-4"
-            >
-              Send Another Message
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center space-y-4">
+        <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+        <h3 className="text-xl font-semibold">Message Sent!</h3>
+        <p className="text-muted-foreground">
+          Thank you for reaching out. We&apos;ve received your message and will get back to you as soon as possible.
+        </p>
+        <Button 
+          onClick={() => setIsSubmitted(false)} 
+          variant="outline"
+          className="mt-4"
+        >
+          Send Another Message
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
-      <CardHeader>
-        <CardTitle>Contact Us</CardTitle>
-        <CardDescription>
-          Send us a message and we&apos;ll get back to you as soon as possible.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-              placeholder="Your full name"
-            />
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          name="name"
+          type="text"
+          value={formData.name}
+          onChange={handleChange}
+          required
+          disabled={isSubmitting}
+          placeholder="Your full name"
+        />
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-              placeholder="your.email@example.com"
-            />
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+          disabled={isSubmitting}
+          placeholder="your.email@example.com"
+        />
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="subject">Subject</Label>
-            <Input
-              id="subject"
-              name="subject"
-              type="text"
-              value={formData.subject}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-              placeholder="What is this about?"
-            />
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="subject">Subject</Label>
+        <Input
+          id="subject"
+          name="subject"
+          type="text"
+          value={formData.subject}
+          onChange={handleChange}
+          required
+          disabled={isSubmitting}
+          placeholder="What is this about?"
+        />
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-              placeholder="Tell us more about your inquiry..."
-              rows={5}
-            />
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="message">Message</Label>
+        <Textarea
+          id="message"
+          name="message"
+          value={formData.message}
+          onChange={handleChange}
+          required
+          disabled={isSubmitting}
+          placeholder="Tell us more about your inquiry..."
+          rows={5}
+        />
+      </div>
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Send Message
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <Button 
+        type="submit" 
+        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white" 
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Sending...
+          </>
+        ) : (
+          <>
+            <Send className="mr-2 h-4 w-4" />
+            Send Message
+          </>
+        )}
+      </Button>
+    </form>
   );
 } 
