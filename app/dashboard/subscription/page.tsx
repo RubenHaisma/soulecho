@@ -134,7 +134,7 @@ export default function SubscriptionPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: 'price_1RfIYfRTUL1jGVwlFEBWHV0M', // This should match your Stripe price ID
+          priceId: 'price_1RfyijRA0wc6of2Oy41KKmIT', // This should match your Stripe price ID
           successUrl: `${window.location.origin}/dashboard/subscription?success=true`,
           cancelUrl: `${window.location.origin}/dashboard/subscription?canceled=true`,
         }),

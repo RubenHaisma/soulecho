@@ -193,7 +193,7 @@ export default function PricingPage() {
       buttonText: 'Upgrade to Premium',
       buttonVariant: 'default' as const,
       popular: true,
-      priceId: 'price_1RfIYfRTUL1jGVwlFEBWHV0M'
+      priceId: 'price_1RfyijRA0wc6of2Oy41KKmIT'
     }
   ];
 
