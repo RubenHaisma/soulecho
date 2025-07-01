@@ -13,7 +13,7 @@ export default function ContactPage() {
             <Image src="/favicon.ico" alt="Contact" width={48} height={48} />
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent mb-4">
-            Contact SoulEcho
+            Contact Talkers 
           </h1>
           <p className="text-base sm:text-lg text-gray-700 mb-6">
             Have questions, feedback, or need help? We&apos;d love to hear from you! Fill out the form below or email us directly at

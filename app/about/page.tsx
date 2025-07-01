@@ -15,10 +15,10 @@ export default function AboutPage() {
             <span className="text-3xl font-bold text-white">💬</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent mb-4">
-            About SoulEcho
+            About Talkers
           </h1>
           <p className="text-base sm:text-lg text-gray-700 mb-6">
-            SoulEcho is your sacred space for meaningful conversations. We help you preserve, reflect, and grow from your most important chats—whether with friends, family, or yourself. Our mission is to empower you to cherish memories, track emotional journeys, and celebrate milestones, all in a private and beautiful environment.
+            Talkers is your sacred space for meaningful conversations. We help you preserve, reflect, and grow from your most important chats—whether with friends, family, or yourself. Our mission is to empower you to cherish memories, track emotional journeys, and celebrate milestones, all in a private and beautiful environment.
           </p>
           <p className="text-base text-gray-600 mb-8">
             Built with love, privacy, and your well-being in mind. Join us in making every conversation count.
