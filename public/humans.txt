@@ -1,0 +1,23 @@
+/* TEAM */
+CEO & Founder: Talkers Team
+Contact: hello [at] talkers.ai
+Twitter: @TalkersAI
+From: San Francisco, CA
+
+/* THANKS */
+AI Technology: OpenAI, Anthropic
+UI Framework: Next.js, React
+Design System: Tailwind CSS, Radix UI
+Hosting: Vercel
+Database: PostgreSQL, Prisma
+
+/* SITE */
+Last update: 2024/12/30
+Language: English
+Doctype: HTML5
+IDE: VS Code, Cursor
+Technologies: Next.js 15, TypeScript, Tailwind CSS
+Components: React, Radix UI, Lucide Icons
+Backend: Node.js, Prisma, PostgreSQL
+AI: OpenAI GPT-4, Anthropic Claude
+Analytics: Google Analytics, Microsoft Clarity, TikTok Pixel 

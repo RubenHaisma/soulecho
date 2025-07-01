@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run seo:check && next build",
     "start": "next start",
     "lint": "next lint",
     "setup": "cp .env.example .env && npm install && npx prisma generate",
@@ -14,7 +14,9 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "docker:build": "docker-compose build"
+    "docker:build": "docker-compose build",
+    "seo:check": "node scripts/seo-check.js",
+    "seo:audit": "npm run build && npm run start & sleep 5 && node -e \"require('./lib/seo-audit.ts')\" && pkill -f 'next start'"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

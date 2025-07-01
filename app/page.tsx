@@ -5,6 +5,9 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import Script from 'next/script';
+import FAQSection from '@/components/faq-section';
+import TestimonialsSection from '@/components/testimonials-section';
 
 export default function HomePage() {
   const { data: session } = useSession();
@@ -337,6 +340,54 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+      
+      {/* SEO-Optimized Sections */}
+      <TestimonialsSection />
+      <FAQSection />
+      
+      {/* Structured Data for Homepage */}
+      <Script
+        id="homepage-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'Talkers - Connect with Cherished Memories',
+            url: 'https://talkers.ai',
+            description: 'AI-powered grief support platform for meaningful conversations with deceased loved ones using WhatsApp messages',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: 'https://talkers.ai/search?q={search_term_string}',
+              'query-input': 'required name=search_term_string'
+            },
+            mainEntity: {
+              '@type': 'Service',
+              name: 'AI Memorial Conversations',
+              serviceType: 'Grief Support Technology',
+              provider: {
+                '@type': 'Organization',
+                name: 'Talkers'
+              },
+              areaServed: 'Worldwide',
+              hasOfferCatalog: {
+                '@type': 'OfferCatalog',
+                name: 'Memorial AI Services',
+                itemListElement: [
+                  {
+                    '@type': 'Offer',
+                    itemOffered: {
+                      '@type': 'Service',
+                      name: 'Free Trial Memorial Conversations',
+                      description: '3-day trial with AI conversations using WhatsApp memories'
+                    }
+                  }
+                ]
+              }
+            }
+          })
+        }}
+      />
     </div>
   );
 }
