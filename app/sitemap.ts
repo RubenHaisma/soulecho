@@ -70,8 +70,67 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
-    // Add dynamic routes if needed
-    // Blog posts, user profiles, etc. can be added here
+    // Blog section
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/blog/reconnect-with-loved-ones`,
+      lastModified: new Date('2024-01-15'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/psychology-digital-memory-preservation`,
+      lastModified: new Date('2024-01-10'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/creating-digital-legacy-guide`,
+      lastModified: new Date('2024-01-05'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/whatsapp-conversations-emotional-value`,
+      lastModified: new Date('2023-12-28'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/grief-digital-age-technology-comfort`,
+      lastModified: new Date('2023-12-20'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/science-emotional-memory-triggers`,
+      lastModified: new Date('2023-12-15'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/digital-grief-healing-guide-2024`,
+      lastModified: new Date('2024-01-25'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/blog/faq`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/getting-started-guide`,
+      lastModified: new Date('2024-01-20'),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
   ];
 
   return routes;

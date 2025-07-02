@@ -11,17 +11,34 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/api/',
           '/dashboard/',
-          '/chat/',
-          '/settings/',
-          '/upload/',
-          '/memories/',
+          '/auth/',
           '/admin/',
           '/_next/',
-          '/tmp/',
           '/private/',
-          '*.json',
-          '/auth/verify-email',
-          '/auth/email-verified'
+        ],
+      },
+      {
+        userAgent: 'Googlebot',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/dashboard/',
+          '/auth/',
+          '/admin/',
+          '/_next/',
+          '/private/',
+        ],
+      },
+      {
+        userAgent: 'Bingbot',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/dashboard/',
+          '/auth/',
+          '/admin/',
+          '/_next/',
+          '/private/',
         ],
       },
       {

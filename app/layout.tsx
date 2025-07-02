@@ -87,7 +87,7 @@ export default function RootLayout({
         
         {/* Google Analytics 4 */}
         <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+          src="https://www.googletagmanager.com/gtag/js?id=G-M05ZEYTGGX"
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -95,15 +95,7 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
-              page_title: document.title,
-              page_location: window.location.href,
-              send_page_view: true,
-              custom_map: {
-                'custom_parameter_1': 'grief_support_interaction',
-                'custom_parameter_2': 'memorial_conversation_start'
-              }
-            });
+            gtag('config', 'G-M05ZEYTGGX');
           `}
         </Script>
         
