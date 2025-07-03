@@ -16,7 +16,11 @@
     "docker:logs": "docker-compose logs -f",
     "docker:build": "docker-compose build",
     "seo:check": "node scripts/seo-check.js",
-    "seo:audit": "npm run build && npm run start & sleep 5 && node -e \"require('./lib/seo-audit.ts')\" && pkill -f 'next start'"
+    "seo:audit": "npm run build && npm run start & sleep 5 && node -e \"require('./lib/seo-audit.ts')\" && pkill -f 'next start'",
+    "email:followup": "node scripts/send-followup-emails.js",
+    "email:setup": "node scripts/generate-admin-key.js",
+    "crm:setup": "node scripts/setup-crm-system.js",
+    "crm:process-sequences": "node -e \"fetch('http://localhost:3000/api/crm/automation/process-sequences', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({automationKey: process.env.AUTOMATION_KEY})}).then(r => r.json()).then(console.log)\""
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

@@ -62,6 +62,7 @@ model User {
   milestones             MemoryMilestone[]
   notifications          NotificationLog[]
   preferences            UserPreferences?
+  emailCampaignLogs      EmailCampaignLog[]
 
   @@map("users")
 }
@@ -171,6 +172,149 @@ model NotificationLog {
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_logs")
+}
+
+model EmailCampaign {
+  id            String               @id @default(cuid())
+  name          String
+  description   String?
+  emailTemplate String               // JSON template data
+  subject       String
+  status        CampaignStatus       @default(DRAFT)
+  targetType    CampaignTargetType   @default(ALL_USERS)
+  targetCriteria Json?               // JSON criteria for targeting
+  scheduledFor  DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  createdBy     String               // admin user id
+  totalTargets  Int                  @default(0)
+  totalSent     Int                  @default(0)
+  totalFailed   Int                  @default(0)
+  totalOpened   Int                  @default(0)
+  totalClicked  Int                  @default(0)
+  logs          EmailCampaignLog[]
+  sequences     EmailSequence[]
+
+  @@map("email_campaigns")
+}
+
+model EmailCampaignLog {
+  id                String           @id @default(cuid())
+  campaignId        String
+  userId            String
+  email             String
+  status            EmailLogStatus   @default(PENDING)
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  openedAt          DateTime?
+  clickedAt         DateTime?
+  errorMessage      String?
+  resendId          String?          // Resend email ID
+  metadata          Json?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  campaign          EmailCampaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@map("email_campaign_logs")
+}
+
+model EmailSequence {
+  id            String           @id @default(cuid())
+  campaignId    String
+  name          String
+  description   String?
+  order         Int              @default(0)
+  delayDays     Int              @default(0) // Days after previous email
+  delayHours    Int              @default(0) // Hours after previous email
+  emailTemplate String           // JSON template data
+  subject       String
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  campaign      EmailCampaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  logs          EmailSequenceLog[]
+
+  @@map("email_sequences")
+}
+
+model EmailSequenceLog {
+  id         String        @id @default(cuid())
+  sequenceId String
+  userId     String
+  email      String
+  status     EmailLogStatus @default(PENDING)
+  scheduledFor DateTime
+  sentAt     DateTime?
+  deliveredAt DateTime?
+  openedAt   DateTime?
+  clickedAt  DateTime?
+  errorMessage String?
+  resendId   String?
+  metadata   Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  sequence   EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@unique([sequenceId, userId])
+  @@map("email_sequence_logs")
+}
+
+model EmailTemplate {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  type        EmailType
+  subject     String
+  htmlContent String
+  textContent String?
+  variables   String[]       @default([]) // Available template variables
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("email_templates")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum CampaignTargetType {
+  ALL_USERS
+  VERIFIED_USERS
+  TRIAL_USERS
+  PREMIUM_USERS
+  INACTIVE_USERS
+  CUSTOM_CRITERIA
+}
+
+enum EmailLogStatus {
+  PENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+  UNSUBSCRIBED
+}
+
+enum EmailType {
+  WELCOME
+  FOLLOW_UP
+  TRIAL_REMINDER
+  UPGRADE_PROMPT
+  FEATURE_ANNOUNCEMENT
+  NEWSLETTER
+  REACTIVATION
+  CUSTOM
 }
 
 enum MilestoneType {
