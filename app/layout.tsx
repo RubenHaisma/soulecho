@@ -36,6 +36,10 @@ export default function RootLayout({
         {/* DNS prefetch for third-party domains */}
         <link rel="dns-prefetch" href="//js.stripe.com" />
         <link rel="dns-prefetch" href="//api.openai.com" />
+        <link rel="dns-prefetch" href="//www.google-analytics.com" />
+        <link rel="dns-prefetch" href="//googletagmanager.com" />
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
         
         {/* Favicon and app icons */}
         <link rel="icon" href="/favicon.ico" sizes="32x32" />
@@ -73,9 +77,29 @@ export default function RootLayout({
         <meta name="audience" content="bereaved individuals, grieving families" />
         <meta name="support-type" content="grief counseling, memorial conversations" />
         
+        {/* Enhanced medical and health meta tags */}
+        <meta name="health-topics" content="grief support, bereavement counseling, mental health, trauma therapy, loss counseling" />
+        <meta name="medical-specialties" content="grief counseling, bereavement therapy, trauma counseling, mental health support" />
+        <meta name="treatment-types" content="individual therapy, group therapy, online counseling, crisis intervention" />
+        <meta name="conditions-treated" content="grief, bereavement, complicated grief, traumatic loss, anticipatory grief" />
+        <meta name="service-area" content="United States, online grief support, virtual counseling" />
+        <meta name="insurance-accepted" content="most major insurance plans, sliding scale fees available" />
+        <meta name="languages-supported" content="English, Spanish, interpretation services available" />
+        <meta name="age-groups" content="children, adolescents, adults, seniors, families" />
+        <meta name="crisis-support" content="24/7 crisis intervention, suicide prevention, emergency support" />
+        <meta name="evidence-based" content="trauma-informed care, evidence-based practices, clinical supervision" />
+        
         {/* Performance and Core Web Vitals optimization */}
         <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="modulepreload" href="/_next/static/chunks/main.js" />
+        
+        {/* Critical CSS preload */}
+        <link rel="preload" href="/_next/static/css/app.css" as="style" />
+        
+        {/* Resource hints for better performance */}
+        <link rel="prefetch" href="/grief-support" />
+        <link rel="prefetch" href="/grief-counseling-near-me" />
+        <link rel="prefetch" href="/free-grief-support" />
         
         {/* Structured Data for Organization */}
         <script
@@ -117,6 +141,56 @@ export default function RootLayout({
                 '@type': 'Audience',
                 audienceType: 'Bereaved individuals and families'
               }
+            })
+          }}
+        />
+        
+        {/* Enhanced Medical Organization Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'MedicalOrganization',
+              '@id': 'https://talkers.ai/#medical-organization',
+              name: 'Talkers Grief Support Services',
+              url: 'https://talkers.ai',
+              logo: 'https://talkers.ai/logo.png',
+              description: 'Professional grief support and bereavement counseling services using AI technology',
+              medicalSpecialty: [
+                'Grief Counseling',
+                'Bereavement Support',
+                'Trauma Therapy',
+                'Mental Health Support',
+                'Crisis Intervention'
+              ],
+              serviceType: [
+                'Individual Grief Counseling',
+                'Group Therapy',
+                'Online Counseling',
+                'Crisis Support',
+                'Memorial Services'
+              ],
+              areaServed: {
+                '@type': 'Country',
+                name: 'United States'
+              },
+              availableService: [
+                {
+                  '@type': 'MedicalTherapy',
+                  name: 'Grief Counseling',
+                  description: 'Professional grief counseling and bereavement support'
+                },
+                {
+                  '@type': 'MedicalTherapy',
+                  name: 'Crisis Intervention',
+                  description: '24/7 crisis support for grief-related emergencies'
+                }
+              ],
+              hasCredential: 'Licensed Mental Health Professionals',
+              isAcceptingNewPatients: true,
+              paymentAccepted: ['Insurance', 'Credit Card', 'Cash'],
+              priceRange: '$12-200'
             })
           }}
         />

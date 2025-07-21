@@ -52,6 +52,36 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
       {
+        userAgent: 'Twitterbot',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/dashboard/',
+          '/auth/',
+          '/admin/',
+        ],
+      },
+      {
+        userAgent: 'LinkedInBot',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/dashboard/',
+          '/auth/',
+          '/admin/',
+        ],
+      },
+      {
+        userAgent: 'PinterestBot',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/dashboard/',
+          '/auth/',
+          '/admin/',
+        ],
+      },
+      {
         userAgent: 'GPTBot',
         disallow: '/',
       },

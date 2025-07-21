@@ -81,10 +81,10 @@ export default function HomePage() {
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-2xl blur opacity-30 animate-pulse"></div>
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-blue-700 bg-clip-text text-transparent" itemProp="name">
                 Talkers
               </h1>
-              <div className="text-[10px] sm:text-xs text-gray-500 tracking-wider">MEMORIES LIVE ON</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 tracking-wider">GRIEF SUPPORT & MEMORIES</div>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
@@ -108,7 +108,11 @@ export default function HomePage() {
                 </Link>
               </>
             )}
-            {session ? "Go to Dashboard" : "Find Comfort Now"}
+            <Link href="/grief-support">
+              <Button variant="ghost" className="text-gray-600 hover:text-gray-800 hover:bg-white/50 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 text-sm sm:text-base">
+                Grief Support
+              </Button>
+            </Link>
             <Button variant="ghost" className="text-gray-600 hover:text-gray-800 hover:bg-white/50 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 text-sm sm:text-base">
               Privacy
             </Button>
@@ -124,7 +128,7 @@ export default function HomePage() {
             {/* Trust Badge */}
             <div className="inline-flex items-center gap-2 sm:gap-3 bg-white/60 backdrop-blur-md border border-white/40 rounded-full px-4 sm:px-6 py-2 sm:py-3 mb-6 sm:mb-8 shadow-lg shadow-purple-100/20 text-xs sm:text-sm">
               <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="font-medium text-gray-700">Your memories stay private and secure</span>
+              <span className="font-medium text-gray-700">Professional grief support & secure memories</span>
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
                 <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-sm flex items-center justify-center">
                   <div className="w-1.5 h-1 bg-green-500 rounded-full"></div>
@@ -133,22 +137,22 @@ export default function HomePage() {
             </div>
             {/* Main Headline */}
             <div className="mb-6 sm:mb-8">
-              <h2 className="text-4xl xs:text-5xl sm:text-7xl md:text-8xl font-black text-gray-900 mb-3 sm:mb-4 leading-tight sm:leading-none tracking-tight">
-                Keep The
+              <h2 className="text-4xl xs:text-5xl sm:text-7xl md:text-8xl font-black text-gray-900 mb-3 sm:mb-4 leading-tight sm:leading-none tracking-tight" itemProp="headline">
+                Grief Support &
                 <br />
                 <span className="relative inline-block">
                   <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    Connection
+                    Memorial
                   </span>
                   <div className="absolute -inset-1 sm:-inset-2 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-indigo-600/20 blur-xl rounded-lg"></div>
                 </span>
                 <br />
-                Alive
+                Conversations
               </h2>
               <div className="relative max-w-full sm:max-w-3xl mx-auto">
-                <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed font-light">
-                  A sacred space where your WhatsApp conversations become a bridge to cherished memories. 
-                  <span className="font-medium text-gray-800"> Their words, their essence, forever preserved.</span>
+                <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed font-light" itemProp="description">
+                  Professional grief support platform where preserved conversations provide comfort and healing. 
+                  <span className="font-medium text-gray-800">Find support, connect with memories, heal together.</span>
                 </p>
                 {/* Animated Underline */}
                 <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 sm:w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full opacity-60 animate-pulse"></div>
@@ -168,23 +172,25 @@ export default function HomePage() {
                         <div className="w-2.5 h-2.5 sm:w-3 h-3 bg-white rounded-full"></div>
                       </div>
                     </div>
-                    {session ? "Go to Dashboard" : "Begin Your Journey"}
+                    {session ? "Go to Dashboard" : "Get Grief Support"}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 rounded-full transform -skew-x-12 group-hover:animate-pulse"></div>
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="w-full sm:w-auto border-2 border-gray-200 hover:border-purple-300 text-gray-700 hover:text-purple-700 px-6 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl font-medium rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-300 hover:scale-105 shadow-lg"
-              >
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-current rounded-full flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 sm:w-2 h-2 bg-current rounded-full"></div>
+              <Link href="/grief-support" className="w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="w-full sm:w-auto border-2 border-gray-200 hover:border-purple-300 text-gray-700 hover:text-purple-700 px-6 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl font-medium rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-300 hover:scale-105 shadow-lg"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-current rounded-full flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 sm:w-2 h-2 bg-current rounded-full"></div>
+                    </div>
+                    Find Support Now
                   </div>
-                  See How It Works
-                </div>
-              </Button>
+                </Button>
+              </Link>
             </div>
             {/* Rotating Testimonials */}
             <div className="relative h-12 sm:h-16 overflow-hidden">

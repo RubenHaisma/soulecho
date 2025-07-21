@@ -40,6 +40,14 @@ const nextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
         ],
       },
       {
@@ -52,6 +60,19 @@ const nextConfig = {
           {
             key: 'X-Grief-Support',
             value: 'true',
+          },
+        ],
+      },
+      {
+        source: '/(grief-support|grief-counseling|bereavement-support)/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+          {
+            key: 'X-Medical-Content',
+            value: 'grief-support',
           },
         ],
       },

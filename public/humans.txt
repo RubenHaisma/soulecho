@@ -4,12 +4,21 @@ Contact: hello [at] talkers.ai
 Twitter: @TalkersAI
 From: San Francisco, CA
 
+/* MEDICAL TEAM */
+Clinical Director: Licensed Mental Health Professionals
+Grief Specialists: Certified Grief Counselors
+Crisis Support: 24/7 Crisis Intervention Team
+Medical Advisors: Board-Certified Psychiatrists
+
 /* THANKS */
 AI Technology: OpenAI, Anthropic
 UI Framework: Next.js, React
 Design System: Tailwind CSS, Radix UI
 Hosting: Vercel
 Database: PostgreSQL, Prisma
+Medical Compliance: HIPAA, Healthcare Standards
+Crisis Support: National Suicide Prevention Lifeline
+Professional Organizations: American Counseling Association
 
 /* SITE */
 Last update: 2024/12/30
@@ -20,4 +29,8 @@ Technologies: Next.js 15, TypeScript, Tailwind CSS
 Components: React, Radix UI, Lucide Icons
 Backend: Node.js, Prisma, PostgreSQL
 AI: OpenAI GPT-4, Anthropic Claude
-Analytics: Google Analytics, Microsoft Clarity, TikTok Pixel 
+Analytics: Google Analytics, Microsoft Clarity, TikTok Pixel
+SEO: Technical SEO, Medical SEO, Local SEO
+Performance: Core Web Vitals Optimized, Mobile-First
+Accessibility: WCAG 2.1 AA Compliant
+Security: HTTPS, CSP, HSTS, Security Headers
