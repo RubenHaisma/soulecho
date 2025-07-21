@@ -60,7 +60,6 @@ export default function SEOHead(props: SEOHeadProps) {
       
       {/* Security headers */}
       <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
-      <meta httpEquiv="X-Frame-Options" content="DENY" />
       <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
       
       {/* Additional meta tags for better indexing */}
