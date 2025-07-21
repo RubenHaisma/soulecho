@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTrialStatus } from '@/hooks/use-trial-status';
+import { ConversationBlocker } from '@/components/trial-management/conversation-blocker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,6 +26,7 @@ interface ParsedData {
 }
 
 export default function UploadPage() {
+  const { trialStatus, canCreateConversation, getBlockingReason } = useTrialStatus();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -40,6 +43,20 @@ export default function UploadPage() {
   const [showInstructions, setShowInstructions] = useState(false);
   const router = useRouter();
   const session = useSession() as { data: (Session & { user: { id?: string; sub?: string; name?: string | null; email?: string | null; image?: string | null } }) | null, status: string };
+
+  // Check if user can create conversations
+  const blockingReason = getBlockingReason();
+  
+  if (blockingReason) {
+    return (
+      <ConversationBlocker
+        reason={blockingReason}
+        trialEndDate={trialStatus?.isActive ? undefined : trialStatus?.trialEndDate}
+        conversationsUsed={trialStatus?.conversationsUsed}
+        conversationLimit={trialStatus?.conversationLimit}
+      />
+    );
+  }
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -216,6 +233,11 @@ Supported formats:
   const handleCreateSession = async () => {
     if (!file || !selectedPerson || !personName.trim()) {
       setError('Please complete all fields');
+      return;
+    }
+
+    if (!canCreateConversation()) {
+      setError('You have reached your conversation limit. Please upgrade to continue.');
       return;
     }
 
@@ -755,10 +777,19 @@ Supported formats:
                   <Button 
                     onClick={handleCreateSession}
                     disabled={uploading}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-sm sm:text-base py-3 sm:py-4 touch-manipulation"
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-sm sm:text-base py-3 sm:py-4 touch-manipulation"
                   >
-                      {uploading ? 'Creating Session...' : `Create Chat Session with ${personName || selectedPerson}`}
+                    {uploading ? 'Processing...' : 'Process File'}
                   </Button>
+                )}
+
+                {/* Trial warning for upload */}
+                {trialStatus?.planType === 'trial' && trialStatus.conversationsUsed >= trialStatus.conversationLimit && (
+                  <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-orange-800 text-sm">
+                      ⚠️ You've reached your trial conversation limit. Upgrade to Premium to create unlimited conversations.
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
