@@ -12,8 +12,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark onboarding as completed for the user
-    // You could add an onboardingCompleted field to the user model
-    // For now, we'll just return success
+    await prisma.user.update({
+      where: { email: session.user.email },
+      data: { onboardingCompleted: true },
+    });
     
     return NextResponse.json({ 
       success: true,

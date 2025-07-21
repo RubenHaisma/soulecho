@@ -50,7 +50,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
     hasUploadedFile: false,
     hasCreatedSession: false,
     hasStartedChat: false,
-    hasExploredFeatures: false
+    hasExploredFeatures: false,
+    onboardingCompleted: false
   });
 
   const steps: OnboardingStep[] = [
@@ -326,6 +327,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
   useEffect(() => {
     checkUserProgress();
   }, []);
+
+  useEffect(() => {
+    if (userProgress.onboardingCompleted) {
+      onComplete();
+    }
+  }, [userProgress.onboardingCompleted]);
 
   const checkUserProgress = async () => {
     try {

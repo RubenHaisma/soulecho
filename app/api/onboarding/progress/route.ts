@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
       hasUploadedFile: user.chatSessions.length > 0,
       hasCreatedSession: user.chatSessions.length > 0,
       hasStartedChat: user.chatSessions.some(session => session.conversations.length > 0),
-      hasExploredFeatures: false // This could be tracked separately
+      hasExploredFeatures: false, // This could be tracked separately
+      onboardingCompleted: (user as any).onboardingCompleted ?? false
     };
 
     return NextResponse.json({ progress });

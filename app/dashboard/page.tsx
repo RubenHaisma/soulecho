@@ -28,8 +28,8 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         
-        // Show onboarding if user hasn't uploaded any files yet
-        const needsOnboarding = !data.progress.hasUploadedFile;
+        // Show onboarding if user hasn't completed onboarding
+        const needsOnboarding = !data.progress.onboardingCompleted;
         setShowOnboarding(needsOnboarding);
       }
     } catch (error) {

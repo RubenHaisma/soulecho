@@ -62,6 +62,7 @@ model User {
   milestones             MemoryMilestone[]
   notifications          NotificationLog[]
   preferences            UserPreferences?
+  onboardingCompleted    Boolean           @default(false)
 
   @@map("users")
 }
