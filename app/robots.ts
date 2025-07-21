@@ -42,6 +42,16 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
       {
+        userAgent: 'facebookexternalhit',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/dashboard/',
+          '/auth/',
+          '/admin/',
+        ],
+      },
+      {
         userAgent: 'GPTBot',
         disallow: '/',
       },

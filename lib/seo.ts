@@ -19,6 +19,12 @@ const siteName = 'Talkers - Connect with Cherished Memories';
 
 // Core grief support and memorial service keywords
 const coreKeywords = [
+  'grief support platform',
+  'bereavement support online',
+  'memorial conversations ai',
+  'grief counseling technology',
+  'digital grief support',
+  'online grief help',
   'ai memorial service',
   'grief support platform',
   'connect with deceased loved ones',
@@ -29,7 +35,6 @@ const coreKeywords = [
   'grief healing through ai',
   'deceased loved one conversations',
   'memorial message preservation',
-  'grief counseling technology',
   'ai powered grief support',
   'virtual memorial service',
   'death anniversary support',
@@ -38,7 +43,17 @@ const coreKeywords = [
   'memorial conversation ai',
   'bereavement chatbot',
   'deceased family member chat',
-  'grief therapy platform'
+  'grief therapy platform',
+  'losing a parent grief',
+  'spouse death support',
+  'child loss grief help',
+  'pet loss bereavement',
+  'sudden death grief support',
+  'complicated grief counseling',
+  'grief stages explained',
+  'how to cope with grief',
+  'grief support groups online',
+  'memorial preservation digital'
 ];
 
 export function generateMetadata(config: SEOConfig): Metadata {

@@ -8,6 +8,8 @@ import Link from 'next/link';
 import Script from 'next/script';
 import FAQSection from '@/components/faq-section';
 import TestimonialsSection from '@/components/testimonials-section';
+import { TrustSignals } from '@/components/seo/trust-signals';
+import { LocalSEO } from '@/components/seo/local-seo';
 
 export default function HomePage() {
   const { data: session } = useSession();
@@ -64,7 +66,7 @@ export default function HomePage() {
 
       {/* Header */}
       <header className="relative z-10 py-4 px-2 sm:py-8 sm:px-4">
-        <div className={`max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}> 
+        <div className={`max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}> 
           <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-0">
             {/* Custom Logo */}
             <div className="relative">
@@ -106,11 +108,10 @@ export default function HomePage() {
                 </Link>
               </>
             )}
-            <Link href="/privacy">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-800 hover:bg-white/50 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 text-sm sm:text-base">
-                Privacy
-              </Button>
-            </Link>
+            {session ? "Go to Dashboard" : "Find Comfort Now"}
+            <Button variant="ghost" className="text-gray-600 hover:text-gray-800 hover:bg-white/50 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 text-sm sm:text-base">
+              Privacy
+            </Button>
           </div>
         </div>
       </header>
@@ -344,6 +345,12 @@ export default function HomePage() {
       {/* SEO-Optimized Sections */}
       <TestimonialsSection />
       <FAQSection />
+      
+      {/* Trust Signals */}
+      <TrustSignals />
+      
+      {/* Local SEO */}
+      <LocalSEO />
       
       {/* Structured Data for Homepage */}
       <Script

@@ -43,6 +43,19 @@ const nextConfig = {
         ],
       },
       {
+        source: '/grief-support/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+          {
+            key: 'X-Grief-Support',
+            value: 'true',
+          },
+        ],
+      },
+      {
         source: '/sitemap.xml',
         headers: [
           {

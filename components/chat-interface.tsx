@@ -7,6 +7,9 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Send, Heart, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { ProfileCustomization } from '@/components/personalization/profile-customization';
+import { ConversationThemes } from '@/components/personalization/conversation-themes';
+import { MemoryPreferences } from '@/components/personalization/memory-preferences';
 
 interface Message {
   id: string;
@@ -80,6 +83,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   } | null>(null);
   const [degradationMessage, setDegradationMessage] = useState<string | null>(null);
   const [qualityLevel, setQualityLevel] = useState<number>(100);
+  const [showPersonalization, setShowPersonalization] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState('warm-embrace');
+  const [profileCustomization, setProfileCustomization] = useState(null);
 
   useEffect(() => {
     scrollToBottom();
@@ -322,6 +328,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     );
   };
 
+  const handleProfileSave = (profile: any) => {
+    setProfileCustomization(profile);
+    // Save to backend
+    fetch(`/api/sessions/${sessionId}/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile)
+    });
+  };
+
+  const handleThemeChange = (themeId: string) => {
+    setSelectedTheme(themeId);
+    // Save theme preference
+    fetch(`/api/sessions/${sessionId}/theme`, {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ themeId })
+    });
+  };
+
   if (isLoadingHistory) {
     return (
       <div className={`flex flex-col h-full ${className}`}>
@@ -340,9 +366,81 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
 
   return (
-    <div className={`flex flex-col h-full bg-gradient-to-br from-[#fdfdfd] via-purple-50/30 to-blue-50/20 ${className}`}>
+    <div className={`flex flex-col h-full ${className}`} style={{
+      background: selectedTheme === 'warm-embrace' ? 'linear-gradient(135deg, #fed7aa 0%, #fecaca 100%)' :
+                 selectedTheme === 'peaceful-garden' ? 'linear-gradient(135deg, #d1fae5 0%, #ecfccb 100%)' :
+                 selectedTheme === 'starlit-memories' ? 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)' :
+                 'linear-gradient(135deg, #fdfdfd 0%, #f8f9ff 50%, #f0f4ff 100%)'
+    }}>
+      {/* Personalization Panel */}
+      {showPersonalization && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Personalize Your Experience</h2>
+                <Button variant="ghost" onClick={() => setShowPersonalization(false)}>
+                  ✕
+                </Button>
+              </div>
+              
+              <div className="space-y-8">
+                <ProfileCustomization
+                  sessionId={sessionId}
+                  personName={personName}
+                  onSave={handleProfileSave}
+                />
+                
+                <ConversationThemes
+                  sessionId={sessionId}
+                  personName={personName}
+                  selectedTheme={selectedTheme}
+                  onThemeChange={handleThemeChange}
+                />
+                
+                <MemoryPreferences
+                  sessionId={sessionId}
+                  personName={personName}
+                  preferences={{
+                    autoPlayVoiceMessages: false,
+                    showTimestamps: true,
+                    enableMemoryReminders: true,
+                    reminderFrequency: 'weekly',
+                    emotionalIntensityFilter: 5,
+                    privacyLevel: 'private',
+                    pauseDuringDifficultDates: true,
+                    gentleTransitions: true,
+                    memoryContextLevel: 'moderate'
+                  }}
+                  onPreferencesChange={(prefs) => {
+                    // Save preferences
+                    fetch(`/api/sessions/${sessionId}/preferences`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(prefs)
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages Area - Mobile optimized */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
+        {/* Personalization Button */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPersonalization(true)}
+            className="bg-white/60 backdrop-blur-sm"
+          >
+            🎨 Personalize
+          </Button>
+        </div>
+        
         {/* Degradation message - Mobile optimized */}
         {degradationMessage && (
           <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg mx-1 sm:mx-0">
