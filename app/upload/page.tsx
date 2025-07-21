@@ -44,20 +44,6 @@ export default function UploadPage() {
   const router = useRouter();
   const session = useSession() as { data: (Session & { user: { id?: string; sub?: string; name?: string | null; email?: string | null; image?: string | null } }) | null, status: string };
 
-  // Check if user can create conversations
-  const blockingReason = getBlockingReason();
-  
-  if (blockingReason) {
-    return (
-      <ConversationBlocker
-        reason={blockingReason}
-        trialEndDate={trialStatus?.isActive ? undefined : trialStatus?.trialEndDate}
-        conversationsUsed={trialStatus?.conversationsUsed}
-        conversationLimit={trialStatus?.conversationLimit}
-      />
-    );
-  }
-
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -348,6 +334,17 @@ Supported formats:
     // Don't set uploading to false in finally - let the progress stream handle it
   };
 
+  const blockingReason = getBlockingReason();
+  const shouldBlock = !!blockingReason;
+  const blockingComponent = shouldBlock ? (
+    <ConversationBlocker
+      reason={blockingReason}
+      conversationsUsed={trialStatus?.conversationsUsed}
+      conversationLimit={trialStatus?.conversationLimit}
+    />
+  ) : null;
+
+  if (shouldBlock) return blockingComponent;
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#fdfdfd] via-purple-50/30 to-blue-50/20">
       {/* Mobile-optimized header */}
@@ -787,7 +784,7 @@ Supported formats:
                 {trialStatus?.planType === 'trial' && trialStatus.conversationsUsed >= trialStatus.conversationLimit && (
                   <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                     <p className="text-orange-800 text-sm">
-                      ⚠️ You've reached your trial conversation limit. Upgrade to Premium to create unlimited conversations.
+                      ⚠️ You&apos;ve reached your trial conversation limit. Upgrade to Premium to create unlimited conversations.
                     </p>
                   </div>
                 )}

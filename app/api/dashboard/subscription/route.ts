@@ -95,14 +95,16 @@ export async function GET(request: NextRequest) {
           limit: 10
         });
         
-        billingHistory = invoices.data.map(invoice => ({
-          id: invoice.id,
-          amount: invoice.amount_paid,
-          currency: invoice.currency,
-          status: invoice.status || 'unknown',
-          date: new Date(invoice.created * 1000).toISOString(),
-          description: invoice.description || `Invoice for ${invoice.period_start ? new Date(invoice.period_start * 1000).toLocaleDateString() : 'subscription'}`
-        }));
+        billingHistory = invoices.data
+          .filter(invoice => !!invoice.id)
+          .map(invoice => ({
+            id: invoice.id!,
+            amount: invoice.amount_paid,
+            currency: invoice.currency,
+            status: invoice.status || 'unknown',
+            date: new Date(invoice.created * 1000).toISOString(),
+            description: invoice.description || `Invoice for ${invoice.period_start ? new Date(invoice.period_start * 1000).toLocaleDateString() : 'subscription'}`
+          }));
       } catch (error) {
         console.error('Failed to retrieve billing history:', error);
       }
@@ -110,9 +112,10 @@ export async function GET(request: NextRequest) {
 
     // Get upcoming invoice if subscription is active
     let upcomingInvoice = null;
-    if (stripeSubscription && stripeSubscription.status === 'active') {
+    if (stripeSubscription && (stripeSubscription as any).status === 'active') {
       try {
-        const upcoming = await stripe.invoices.retrieveUpcoming({
+        // Type assertion for Stripe types
+        const upcoming = await (stripe.invoices as any).retrieveUpcoming({
           customer: user.stripeCustomerId!,
           subscription: user.stripeSubscriptionId!
         });
@@ -149,15 +152,15 @@ export async function GET(request: NextRequest) {
         cancelAtPeriodEnd: false
       };
     } else if (stripeSubscription) {
-      const price = stripeSubscription.items.data[0]?.price;
+      const price = (stripeSubscription as any).items.data[0]?.price;
       currentPlan = {
-        id: stripeSubscription.id,
+        id: (stripeSubscription as any).id,
         name: price?.nickname || 'Premium',
         price: (price?.unit_amount || 0) / 100,
         interval: price?.recurring?.interval || 'month',
-        status: stripeSubscription.status as any,
-        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
-        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+        status: (stripeSubscription as any).status as any,
+        currentPeriodEnd: (stripeSubscription as any).current_period_end ? new Date((stripeSubscription as any).current_period_end * 1000).toISOString() : null,
+        cancelAtPeriodEnd: !!(stripeSubscription as any).cancel_at_period_end
       };
     }
 
@@ -200,16 +203,16 @@ export async function GET(request: NextRequest) {
             data: {
               stripeSubscriptionId: activeSub.id,
               stripePriceId: activeSub.items.data[0].price.id,
-              stripeCurrentPeriodEnd: new Date(activeSub.current_period_end * 1000),
+              stripeCurrentPeriodEnd: new Date((activeSub as any).current_period_end * 1000),
               // @ts-ignore
-              subscriptionStatus: activeSub.cancel_at_period_end ? 'canceled' : 'premium',
+              subscriptionStatus: (activeSub as any).cancel_at_period_end ? 'canceled' : 'premium',
               isTrialActive: false,
             },
           });
           // refresh user object locally
           user.stripeSubscriptionId = activeSub.id;
           user.stripePriceId = activeSub.items.data[0].price.id as any;
-          user.stripeCurrentPeriodEnd = new Date(activeSub.current_period_end * 1000);
+          user.stripeCurrentPeriodEnd = new Date((activeSub as any).current_period_end * 1000);
         }
       } catch (err) {
         console.error('Failed to sync subscription from Stripe:', err);

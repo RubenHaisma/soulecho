@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
             await prisma.user.update({
               where: { id: userId },
               data: {
-                stripeCustomerId: subscription.customer as string,
-                stripeSubscriptionId: subscription.id,
-                stripePriceId: subscription.items.data[0].price.id,
-                stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                stripeCustomerId: (subscription as any).customer as string,
+                stripeSubscriptionId: (subscription as any).id,
+                stripePriceId: (subscription as any).items.data[0].price.id,
+                stripeCurrentPeriodEnd: new Date(((subscription as any).current_period_end) * 1000),
                 subscriptionStatus: 'premium',
                 isTrialActive: false
               },
@@ -64,16 +64,16 @@ export async function POST(request: NextRequest) {
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
         
-        if (invoice.subscription) {
+        if ((invoice as any).subscription) {
           const subscription = await stripe.subscriptions.retrieve(
-            invoice.subscription as string
+            (invoice as any).subscription as string
           );
           
           await prisma.user.update({
-            where: { stripeCustomerId: subscription.customer as string },
+            where: { stripeCustomerId: (subscription as any).customer as string },
             data: {
-              stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-              subscriptionStatus: subscription.cancel_at_period_end ? 'canceled' : 'premium'
+              stripeCurrentPeriodEnd: new Date(((subscription as any).current_period_end) * 1000),
+              subscriptionStatus: (subscription as any).cancel_at_period_end ? 'canceled' : 'premium'
             },
           });
         }
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         
         await prisma.user.update({
-          where: { stripeCustomerId: subscription.customer as string },
+          where: { stripeCustomerId: (subscription as any).customer as string },
           data: {
             stripeSubscriptionId: null,
             stripePriceId: null,

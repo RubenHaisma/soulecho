@@ -1,10 +1,11 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { NextPage } from 'next'; // Import NextPage for proper typing
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Calendar, Clock, Heart, MessageCircle, Users, Brain, Shield, HelpCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, Clock, Heart, MessageCircle, Users, Brain, HelpCircle } from 'lucide-react';
 
 interface BlogPost {
   title: string;
@@ -145,13 +146,18 @@ const categoryInfo = {
   }
 };
 
+// Define the interface for params
+interface CategoryPageProps {
+  params: Promise<{ slug: string }>; // Use Promise for dynamic route params
+}
+
+// Update generateMetadata to handle params as a Promise
 export async function generateMetadata({
   params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const category = categoryInfo[params.slug as keyof typeof categoryInfo];
-  
+}: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params; // Await the params to resolve the Promise
+  const category = categoryInfo[slug as keyof typeof categoryInfo];
+
   if (!category) {
     return {
       title: 'Category Not Found | Talkers Blog',
@@ -166,44 +172,46 @@ export async function generateMetadata({
       title: `${category.title} Articles - Digital Memory Preservation | Talkers`,
       description: category.description,
       type: 'website',
-      url: `/blog/category/${params.slug}`,
+      url: `/blog/category/${slug}`,
     },
     alternates: {
-      canonical: `/blog/category/${params.slug}`,
+      canonical: `/blog/category/${slug}`,
     },
   };
 }
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
-  const category = categoryInfo[params.slug as keyof typeof categoryInfo];
-  
+// Update CategoryPage to use NextPage and handle params as a Promise
+const CategoryPage: NextPage<CategoryPageProps> = async ({ params }) => {
+  const { slug } = await params; // Await the params to resolve the Promise
+  const category = categoryInfo[slug as keyof typeof categoryInfo];
+
   if (!category) {
     notFound();
   }
 
   const categoryPosts = allBlogPosts.filter(
-    post => post.category.toLowerCase().replace(/\s+/g, '-').replace('&', '') === params.slug
+    (post) => post.category.toLowerCase().replace(/\s+/g, '-').replace('&', '') === slug
   );
 
   const IconComponent = category.icon;
 
   const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": `${category.title} Articles`,
-    "description": category.description,
-    "url": `/blog/category/${params.slug}`,
-    "mainEntity": {
-      "@type": "ItemList",
-      "numberOfItems": categoryPosts.length,
-      "itemListElement": categoryPosts.map((post, index) => ({
-        "@type": "Article",
-        "position": index + 1,
-        "name": post.title,
-        "description": post.description,
-        "url": `/blog/${post.slug}`
-      }))
-    }
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${category.title} Articles`,
+    description: category.description,
+    url: `/blog/category/${slug}`,
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: categoryPosts.length,
+      itemListElement: categoryPosts.map((post, index) => ({
+        '@type': 'Article',
+        position: index + 1,
+        name: post.title,
+        description: post.description,
+        url: `/blog/${post.slug}`,
+      })),
+    },
   };
 
   return (
@@ -329,11 +337,11 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">Browse Other Categories</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(categoryInfo)
-                .filter(([slug]) => slug !== params.slug)
-                .map(([slug, info]) => {
+                .filter(([catSlug]) => catSlug !== slug)
+                .map(([catSlug, info]) => {
                   const CategoryIcon = info.icon;
                   return (
-                    <Link key={slug} href={`/blog/category/${slug}`}>
+                    <Link key={catSlug} href={`/blog/category/${catSlug}`}>
                       <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
                         <CardContent className="p-6">
                           <div className="flex items-center gap-3 mb-3">
@@ -385,10 +393,12 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
       </div>
     </>
   );
-}
+};
+
+export default CategoryPage;
 
 export async function generateStaticParams() {
   return Object.keys(categoryInfo).map((slug) => ({
     slug,
   }));
-} 
+}

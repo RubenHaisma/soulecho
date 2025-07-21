@@ -70,7 +70,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
             </h3>
             <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
               Talkers helps you preserve and interact with your most precious conversations. 
-              Let's get you started on this meaningful journey.
+              Let&apos;s get you started on this meaningful journey.
             </p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -94,7 +94,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
         <div className="space-y-6">
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Simple. Secure. Meaningful.</h3>
-            <p className="text-gray-600">Here's how Talkers transforms your conversations into lasting connections</p>
+            <p className="text-gray-600">Here&apos;s how Talkers transforms your conversations into lasting connections</p>
           </div>
           
           <div className="space-y-4">
@@ -137,7 +137,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Your Memories Are Sacred</h3>
-            <p className="text-gray-600">We've built Talkers with privacy and security as our foundation</p>
+            <p className="text-gray-600">We&apos;ve built Talkers with privacy and security as our foundation</p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-4">
@@ -189,7 +189,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
               </li>
               <li className="flex gap-2">
                 <span className="font-bold">3.</span>
-                <span>Choose "Without Media" for faster processing</span>
+                <span>Choose &quot;Without Media&quot; for faster processing</span>
               </li>
               <li className="flex gap-2">
                 <span className="font-bold">4.</span>
@@ -213,7 +213,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
           {userProgress.hasUploadedFile && (
             <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-green-800 font-medium">Great! You've uploaded your first conversation</p>
+              <p className="text-green-800 font-medium">Great! You&apos;ve uploaded your first conversation</p>
             </div>
           )}
         </div>
@@ -260,7 +260,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
           {userProgress.hasStartedChat && (
             <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-green-800 font-medium">Wonderful! You've started your first conversation</p>
+              <p className="text-green-800 font-medium">Wonderful! You&apos;ve started your first conversation</p>
             </div>
           )}
         </div>
@@ -311,9 +311,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
           </div>
           
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6">
-            <h4 className="font-semibold text-gray-900 mb-3">🎉 You're All Set!</h4>
+            <h4 className="font-semibold text-gray-900 mb-3">🎉 You&apos;re All Set!</h4>
             <p className="text-gray-700 text-sm">
-              You've completed the onboarding process. Your 3-day trial gives you full access to all features. 
+              You&apos;ve completed the onboarding process. Your 3-day trial gives you full access to all features. 
               Explore, connect, and discover the healing power of preserved conversations.
             </p>
           </div>
@@ -336,10 +336,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
         
         // Auto-advance based on progress
         if (data.progress.hasUploadedFile && currentStep < 4) {
-          setCompletedSteps(prev => new Set([...prev, 3]));
+          setCompletedSteps(prev => new Set([...Array.from(prev), 3]));
         }
         if (data.progress.hasStartedChat && currentStep < 5) {
-          setCompletedSteps(prev => new Set([...prev, 4]));
+          setCompletedSteps(prev => new Set([...Array.from(prev), 4]));
         }
       }
     } catch (error) {
@@ -349,7 +349,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
-      setCompletedSteps(prev => new Set([...prev, currentStep]));
+      setCompletedSteps(prev => new Set([...Array.from(prev), currentStep]));
       setCurrentStep(currentStep + 1);
     } else {
       handleComplete();
@@ -400,7 +400,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
             </h1>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Getting Started</h2>
-          <p className="text-gray-600">Let's set up your account and create your first conversation</p>
+          <p className="text-gray-600">Let&apos;s set up your account and create your first conversation</p>
         </div>
 
         {/* Progress Bar */}
