@@ -14,7 +14,7 @@ export interface SEOConfig {
   schema?: any;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://talkers.ai';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://talkers.pro';
 const siteName = 'Talkers - Connect with Cherished Memories';
 
 // Core grief support and memorial service keywords

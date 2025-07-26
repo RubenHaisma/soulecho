@@ -124,7 +124,7 @@ export default function LosingParentGriefPage() {
             '@type': 'MedicalWebPage',
             name: 'Losing a Parent - Grief Support for Adult Children',
             description: 'Specialized grief support for adults who lost a parent, including practical guidance and emotional support',
-            url: 'https://talkers.ai/losing-parent-grief',
+            url: 'https://talkers.pro/losing-parent-grief',
             about: {
               '@type': 'MedicalCondition',
               name: 'Parental Loss Grief',

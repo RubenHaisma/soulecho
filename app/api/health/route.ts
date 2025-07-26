@@ -32,9 +32,9 @@ export async function GET(request: NextRequest) {
         upload: '/api/upload'
       },
       support: {
-        email: 'support@talkers.ai',
-        docs: 'https://talkers.ai/docs',
-        status: 'https://status.talkers.ai'
+        email: 'support@talkers.pro',
+        docs: 'https://talkers.pro/docs',
+        status: 'https://status.talkers.pro'
       }
     };
 

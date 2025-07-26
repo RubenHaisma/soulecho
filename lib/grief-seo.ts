@@ -16,7 +16,7 @@ export interface GriefSEOConfig {
   lossType?: 'parent' | 'spouse' | 'child' | 'pet' | 'friend' | 'general';
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://talkers.ai';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://talkers.pro';
 const siteName = 'Talkers - Grief Support & Memorial Conversations';
 
 // Comprehensive grief-related keywords targeting different search intents

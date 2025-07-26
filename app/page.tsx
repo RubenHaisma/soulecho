@@ -367,11 +367,11 @@ export default function HomePage() {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: 'Talkers - Connect with Cherished Memories',
-            url: 'https://talkers.ai',
+            url: 'https://talkers.pro',
             description: 'AI-powered grief support platform for meaningful conversations with deceased loved ones using WhatsApp messages',
             potentialAction: {
               '@type': 'SearchAction',
-              target: 'https://talkers.ai/search?q={search_term_string}',
+              target: 'https://talkers.pro/search?q={search_term_string}',
               'query-input': 'required name=search_term_string'
             },
             mainEntity: {

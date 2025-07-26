@@ -109,7 +109,7 @@ export default function GriefCounselingNearMePage() {
             '@type': 'MedicalWebPage',
             name: 'Grief Counseling Near Me - Find Local Therapists',
             description: 'Find qualified grief counselors and bereavement therapists in your local area',
-            url: 'https://talkers.ai/grief-counseling-near-me',
+            url: 'https://talkers.pro/grief-counseling-near-me',
             about: {
               '@type': 'MedicalCondition',
               name: 'Grief and Bereavement',

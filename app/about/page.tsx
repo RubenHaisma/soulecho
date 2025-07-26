@@ -21,7 +21,7 @@ export default function AboutPage() {
             '@type': 'AboutPage',
             name: 'About Talkers - AI-Powered Grief Support Platform',
             description: 'Learn how Talkers helps people heal through AI conversations with deceased loved ones using WhatsApp messages',
-            url: 'https://talkers.ai/about',
+            url: 'https://talkers.pro/about',
             mainEntity: {
               '@type': 'Organization',
               name: 'Talkers',

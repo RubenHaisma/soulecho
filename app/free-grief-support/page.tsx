@@ -120,7 +120,7 @@ export default function FreeGriefSupportPage() {
             '@type': 'MedicalWebPage',
             name: 'Free Grief Support - No-Cost Bereavement Help',
             description: 'Comprehensive directory of free grief support resources, counseling, and mental health services',
-            url: 'https://talkers.ai/free-grief-support',
+            url: 'https://talkers.pro/free-grief-support',
             about: {
               '@type': 'MedicalCondition',
               name: 'Grief and Bereavement',

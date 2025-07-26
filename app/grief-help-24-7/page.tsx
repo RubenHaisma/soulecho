@@ -111,7 +111,7 @@ export default function GriefHelp247Page() {
             '@type': 'MedicalWebPage',
             name: '24/7 Grief Help & Support - Immediate Assistance',
             description: 'Comprehensive directory of 24/7 grief support resources and crisis intervention services',
-            url: 'https://talkers.ai/grief-help-24-7',
+            url: 'https://talkers.pro/grief-help-24-7',
             about: {
               '@type': 'MedicalCondition',
               name: 'Grief Crisis and Bereavement Emergency',

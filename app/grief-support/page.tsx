@@ -110,7 +110,7 @@ export default function GriefSupportPage() {
             '@type': 'MedicalWebPage',
             name: 'Comprehensive Grief Support Services',
             description: 'Professional grief support, AI memorial conversations, and bereavement counseling for all types of loss',
-            url: 'https://talkers.ai/grief-support',
+            url: 'https://talkers.pro/grief-support',
             about: {
               '@type': 'MedicalCondition',
               name: 'Grief and Bereavement',

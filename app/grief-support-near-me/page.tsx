@@ -86,10 +86,10 @@ export default function GriefSupportNearMePage() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'LocalBusiness',
-            '@id': 'https://talkers.ai/grief-support-near-me',
+            '@id': 'https://talkers.pro/grief-support-near-me',
             name: 'Local Grief Support Services',
             description: 'Find grief support, bereavement counseling, and support groups in your local area',
-            url: 'https://talkers.ai/grief-support-near-me',
+            url: 'https://talkers.pro/grief-support-near-me',
             serviceType: 'Grief Support and Bereavement Counseling',
             areaServed: {
               '@type': 'Country',

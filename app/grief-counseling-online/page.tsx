@@ -133,7 +133,7 @@ export default function OnlineGriefCounselingPage() {
             '@type': 'MedicalWebPage',
             name: 'Online Grief Counseling & Therapy',
             description: 'Professional online grief counseling and therapy services from licensed therapists',
-            url: 'https://talkers.ai/grief-counseling-online',
+            url: 'https://talkers.pro/grief-counseling-online',
             about: {
               '@type': 'MedicalCondition',
               name: 'Grief and Bereavement',

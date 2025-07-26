@@ -30,7 +30,7 @@ export function ArticleSchema({
     '@type': 'Article',
     headline,
     description,
-    image: `https://talkers.ai${image}`,
+    image: `https://talkers.pro${image}`,
     author: {
       '@type': 'Person',
       name: author
@@ -40,7 +40,7 @@ export function ArticleSchema({
       name: 'Talkers',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://talkers.ai/logo.png'
+        url: 'https://talkers.pro/logo.png'
       }
     },
     datePublished,

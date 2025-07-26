@@ -165,7 +165,7 @@ export default function GriefStagesPage() {
             '@type': 'MedicalWebPage',
             name: 'Understanding the 5 Stages of Grief - Complete Guide',
             description: 'Comprehensive guide to the 5 stages of grief: denial, anger, bargaining, depression, and acceptance',
-            url: 'https://talkers.ai/grief-stages',
+            url: 'https://talkers.pro/grief-stages',
             about: {
               '@type': 'MedicalCondition',
               name: 'Grief and Bereavement',

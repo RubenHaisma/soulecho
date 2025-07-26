@@ -1,8 +1,8 @@
-Contact: security@talkers.ai
+Contact: security@talkers.pro
 Expires: 2025-12-31T23:59:59.000Z
-Encryption: https://talkers.ai/.well-known/pgp-key.txt
+Encryption: https://talkers.pro/.well-known/pgp-key.txt
 Preferred-Languages: en
-Canonical: https://talkers.ai/.well-known/security.txt
-Policy: https://talkers.ai/security-policy
-Acknowledgments: https://talkers.ai/security-acknowledgments
-Hiring: https://talkers.ai/careers
+Canonical: https://talkers.pro/.well-known/security.txt
+Policy: https://talkers.pro/security-policy
+Acknowledgments: https://talkers.pro/security-acknowledgments
+Hiring: https://talkers.pro/careers

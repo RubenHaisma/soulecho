@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://talkers.ai';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://talkers.pro';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
