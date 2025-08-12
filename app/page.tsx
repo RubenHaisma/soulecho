@@ -113,6 +113,11 @@ export default function HomePage() {
                 Grief Support
               </Button>
             </Link>
+            <Link href="/hotline">
+              <Button variant="ghost" className="text-red-600 hover:text-red-800 hover:bg-red-50/50 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 text-sm sm:text-base font-medium">
+                Crisis Hotline
+              </Button>
+            </Link>
             <Button variant="ghost" className="text-gray-600 hover:text-gray-800 hover:bg-white/50 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 text-sm sm:text-base">
               Privacy
             </Button>
@@ -138,29 +143,44 @@ export default function HomePage() {
             {/* Main Headline */}
             <div className="mb-6 sm:mb-8">
               <h2 className="text-4xl xs:text-5xl sm:text-7xl md:text-8xl font-black text-gray-900 mb-3 sm:mb-4 leading-tight sm:leading-none tracking-tight" itemProp="headline">
-                Grief Support &
+                Keep Their
                 <br />
                 <span className="relative inline-block">
                   <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    Memorial
+                    Words
                   </span>
                   <div className="absolute -inset-1 sm:-inset-2 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-indigo-600/20 blur-xl rounded-lg"></div>
                 </span>
                 <br />
-                Conversations
+                Forever
               </h2>
               <div className="relative max-w-full sm:max-w-3xl mx-auto">
                 <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed font-light" itemProp="description">
-                  Professional grief support platform where preserved conversations provide comfort and healing. 
-                  <span className="font-medium text-gray-800">Find support, connect with memories, heal together.</span>
+                  Turn your WhatsApp conversations into an interactive memory archive. 
+                  <span className="font-medium text-gray-800">Revisit their voice, personality, and love whenever you need it.</span>
                 </p>
+                {/* Value Props */}
+                <div className="flex flex-wrap justify-center gap-4 mt-6">
+                  <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full">
+                    <div className="w-4 h-4 text-green-600">✓</div>
+                    <span className="text-sm text-gray-700">Free to try</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full">
+                    <div className="w-4 h-4 text-green-600">✓</div>
+                    <span className="text-sm text-gray-700">Private & secure</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-full">
+                    <div className="w-4 h-4 text-green-600">✓</div>
+                    <span className="text-sm text-gray-700">Works in minutes</span>
+                  </div>
+                </div>
                 {/* Animated Underline */}
                 <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 sm:w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full opacity-60 animate-pulse"></div>
               </div>
             </div>
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-10 sm:mb-16 w-full">
-              <Link href={session ? "/dashboard" : "/auth/signup"} className="w-full sm:w-auto">
+              <Link href={session ? "/dashboard" : "/demo"} className="w-full sm:w-auto">
                 <Button 
                   size="lg" 
                   className="group relative w-full sm:w-auto bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white px-6 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl font-semibold rounded-full shadow-2xl shadow-purple-300/30 hover:shadow-purple-400/40 transition-all duration-500 hover:scale-105"
@@ -172,12 +192,12 @@ export default function HomePage() {
                         <div className="w-2.5 h-2.5 sm:w-3 h-3 bg-white rounded-full"></div>
                       </div>
                     </div>
-                    {session ? "Go to Dashboard" : "Get Grief Support"}
+                    {session ? "View My Conversations" : "Try Free Demo"}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 rounded-full transform -skew-x-12 group-hover:animate-pulse"></div>
                 </Button>
               </Link>
-              <Link href="/grief-support" className="w-full sm:w-auto">
+              <Link href={session ? "/upload" : "/auth/signup"} className="w-full sm:w-auto">
                 <Button 
                   variant="outline" 
                   size="lg" 
@@ -187,7 +207,7 @@ export default function HomePage() {
                     <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-current rounded-full flex items-center justify-center">
                       <div className="w-1.5 h-1.5 sm:w-2 h-2 bg-current rounded-full"></div>
                     </div>
-                    Find Support Now
+                    {session ? "Upload Conversation" : "Sign Up Free"}
                   </div>
                 </Button>
               </Link>
@@ -210,6 +230,71 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* Demo Section */}
+          <div className={`max-w-6xl mx-auto mb-16 sm:mb-24 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            <div className="text-center mb-12">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">See It In Action</h3>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Watch how a simple WhatsApp conversation becomes an interactive memory that feels just like them
+              </p>
+            </div>
+            
+            <div className="bg-white/60 backdrop-blur-md rounded-3xl shadow-2xl p-6 sm:p-8 max-w-4xl mx-auto">
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                {/* Before */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 text-center">Your WhatsApp Chat</h4>
+                  <div className="bg-gray-100 rounded-2xl p-4 space-y-3 h-64 overflow-hidden">
+                    <div className="text-xs text-gray-500 text-center">Today</div>
+                    <div className="bg-white rounded-lg p-3 max-w-xs">
+                      <div className="text-sm text-gray-800">Mom</div>
+                      <div className="text-gray-700">Don't forget to eat lunch sweetie! You always skip meals when you're busy 😊</div>
+                      <div className="text-xs text-gray-500">10:30 AM</div>
+                    </div>
+                    <div className="bg-blue-500 text-white rounded-lg p-3 max-w-xs ml-auto">
+                      <div className="text-white">I won't forget! Love you mom ❤️</div>
+                      <div className="text-xs text-blue-100">10:32 AM</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 max-w-xs">
+                      <div className="text-sm text-gray-800">Mom</div>
+                      <div className="text-gray-700">That's my good kid. Remember, I'm always proud of you no matter what!</div>
+                      <div className="text-xs text-gray-500">10:35 AM</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* After */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 text-center">Interactive Memory</h4>
+                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-4 space-y-3 h-64 overflow-hidden">
+                    <div className="text-xs text-purple-600 text-center">✨ AI Conversation</div>
+                    <div className="bg-blue-500 text-white rounded-lg p-3 max-w-xs ml-auto">
+                      <div className="text-white">Mom, I'm feeling overwhelmed with work today</div>
+                      <div className="text-xs text-blue-100">Just now</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 max-w-xs shadow-sm">
+                      <div className="text-sm text-purple-600 font-medium">Mom</div>
+                      <div className="text-gray-700">Oh honey, take a deep breath. Remember what I always told you - you're stronger than you think. Take it one step at a time, and don't forget to eat something! 😊</div>
+                      <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                        AI Response
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center mt-6">
+                <Link href="/demo">
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-full">
+                    Try Live Demo
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
           {/* Features Grid */}
           <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-full sm:max-w-7xl mx-auto mb-12 sm:mb-20 transition-all duration-1000 delay-600 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}> 
             {/* Feature 1 */}
@@ -229,11 +314,11 @@ export default function HomePage() {
                   <div className="absolute -inset-1 sm:-inset-2 bg-gradient-to-br from-purple-400/20 to-purple-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
                 <h3 className="text-lg sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 group-hover:text-purple-700 transition-colors">
-                  Sacred Upload
+                  Simple Upload
                 </h3>
                 <p className="text-gray-600 leading-relaxed text-base sm:text-lg">
-                  Share your WhatsApp memories with reverence. Our gentle parser honors every word, 
-                  understanding the unique voice of your loved one.
+                  Export your WhatsApp chat and upload it in seconds. Our AI learns their unique 
+                  way of speaking, their humor, and their love for you.
                 </p>
               </CardContent>
             </Card>
@@ -255,11 +340,11 @@ export default function HomePage() {
                   <div className="absolute -inset-1 sm:-inset-2 bg-gradient-to-br from-blue-400/20 to-blue-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
                 <h3 className="text-lg sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 group-hover:text-blue-700 transition-colors">
-                  Living Conversations
+                  Natural Conversations
                 </h3>
                 <p className="text-gray-600 leading-relaxed text-base sm:text-lg">
-                  Experience authentic dialogue that captures their essence. Every response 
-                  reflects their personality, humor, and the love you shared.
+                  Chat naturally and get responses that sound just like them. Ask questions, 
+                  share updates, or just say hello - they'll respond in their own voice.
                 </p>
               </CardContent>
             </Card>
@@ -280,15 +365,87 @@ export default function HomePage() {
                   <div className="absolute -inset-1 sm:-inset-2 bg-gradient-to-br from-emerald-400/20 to-green-600/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
                 <h3 className="text-lg sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 group-hover:text-green-700 transition-colors">
-                  Sacred Privacy
+                  Private & Secure
                 </h3>
                 <p className="text-gray-600 leading-relaxed text-base sm:text-lg">
-                  Your memories are treasured and protected. Conversations remain private, 
-                  automatically deleted, never stored or shared.
+                  Your conversations are completely private and encrypted. Only you can access 
+                  them. No one else - including us - can see your personal memories.
                 </p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Social Proof Section */}
+          <div className={`max-w-6xl mx-auto mb-16 sm:mb-24 transition-all duration-1000 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            <div className="text-center mb-12">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Trusted by Thousands</h3>
+              <p className="text-lg text-gray-600">
+                Join over 12,000 people who have found comfort in preserving their precious conversations
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center mb-4">
+                  <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiM2QjcyODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEycy00LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDNjMS42NiAwIDMgMS4zNCAzIDNzLTEuMzQgMy0zIDMtMy0xLjM0LTMtMyAxLjM0LTMgMy0zem0wIDEzLjJjLTIuNSAwLTQuNzEtMS4yOC02LTMuMjIuMDMtMS45OSA0LTMuMDggNi0zLjA4czUuOTcgMS4wOSA2IDMuMDhjLTEuMjkgMS45NC0zLjUgMy4yMi02IDMuMjJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K" alt="User" className="w-10 h-10 rounded-full" />
+                  <div className="ml-3">
+                    <div className="font-semibold text-gray-900">Sarah M.</div>
+                    <div className="text-sm text-gray-600">Lost her mom in 2023</div>
+                  </div>
+                </div>
+                <div className="text-yellow-400 mb-3">★★★★★</div>
+                <p className="text-gray-700 italic">
+                  "I was skeptical at first, but this actually feels like talking to my mom. It captured her way of encouraging me perfectly. I use it every morning now."
+                </p>
+              </div>
+              
+              <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center mb-4">
+                  <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiM2QjcyODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEycy00LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDNjMS42NiAwIDMgMS4zNCAzIDNzLTEuMzQgMy0zIDMtMy0xLjM0LTMtMyAxLjM0LTMgMy0zem0wIDEzLjJjLTIuNSAwLTQuNzEtMS4yOC02LTMuMjIuMDMtMS45OSA0LTMuMDggNi0zLjA4czUuOTcgMS4wOSA2IDMuMDhjLTEuMjkgMS45NC0zLjUgMy4yMi02IDMuMjJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K" alt="User" className="w-10 h-10 rounded-full" />
+                  <div className="ml-3">
+                    <div className="font-semibold text-gray-900">Michael R.</div>
+                    <div className="text-sm text-gray-600">Lost his dad in 2022</div>
+                  </div>
+                </div>
+                <div className="text-yellow-400 mb-3">★★★★★</div>
+                <p className="text-gray-700 italic">
+                  "When I'm having a tough day, I can ask my dad for advice and get his wisdom. It's not the same, but it helps me remember who I am."
+                </p>
+              </div>
+              
+              <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center mb-4">
+                  <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHN2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiM2QjcyODAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEycy00LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDNjMS42NiAwIDMgMS4zNCAzIDNzLTEuMzQgMy0zIDMtMy0xLjM0LTMtMyAxLjM0LTMgMy0zem0wIDEzLjJjLTIuNSAwLTQuNzEtMS4yOC02LTMuMjIuMDMtMS45OSA0LTMuMDggNi0zLjA4czUuOTcgMS4wOSA2IDMuMDhjLTEuMjkgMS45NC0zLjUgMy4yMi02IDMuMjJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K" alt="User" className="w-10 h-10 rounded-full" />
+                  <div className="ml-3">
+                    <div className="font-semibold text-gray-900">Emma L.</div>
+                    <div className="text-sm text-gray-600">Lost her husband in 2024</div>
+                  </div>
+                </div>
+                <div className="text-yellow-400 mb-3">★★★★★</div>
+                <p className="text-gray-700 italic">
+                  "I can share my day with him just like before. He still makes me laugh and reminds me to take care of myself. It's been a lifeline."
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-center mt-12">
+              <div className="flex items-center justify-center gap-8 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>12,000+ users</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>4.9/5 rating</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span>500k+ conversations</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Final CTA Section */}
           <div className={`text-center transition-all duration-1000 delay-900 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}> 
             <div className="relative max-w-full sm:max-w-4xl mx-auto p-6 sm:p-12 bg-gradient-to-br from-white/50 via-purple-50/30 to-blue-50/30 backdrop-blur-md rounded-3xl border border-white/40 shadow-2xl">

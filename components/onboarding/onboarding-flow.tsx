@@ -58,7 +58,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
     {
       id: 'welcome',
       title: 'Welcome to Talkers',
-      description: 'Your sacred space for meaningful conversations with loved ones',
+      description: 'Let\'s create your first interactive memory',
       icon: Heart,
       content: (
         <div className="text-center space-y-6">
@@ -67,154 +67,71 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
           </div>
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome, {session?.user?.name?.split(' ')[0] || 'there'}! 👋
+              Hi {session?.user?.name?.split(' ')[0] || 'there'}! 👋
             </h3>
             <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
-              Talkers helps you preserve and interact with your most precious conversations. 
-              Let&apos;s get you started on this meaningful journey.
+              In just 2 simple steps, you'll be chatting with your loved one's memory.
+              Let's start by uploading a conversation.
             </p>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center gap-3 justify-center">
-              <Sparkles className="w-5 h-5 text-blue-600" />
-              <span className="text-blue-800 font-medium">3-Day Free Trial Activated</span>
+              <Sparkles className="w-5 h-5 text-green-600" />
+              <span className="text-green-800 font-medium">✓ Free Trial - No Credit Card Required</span>
             </div>
-            <p className="text-blue-700 text-sm mt-2">
-              Experience all features with no limitations during your trial
+            <p className="text-green-700 text-sm mt-2">
+              Try unlimited conversations for 14 days
             </p>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'how-it-works',
-      title: 'How Talkers Works',
-      description: 'Understanding the simple 3-step process',
-      icon: Play,
-      content: (
-        <div className="space-y-6">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Simple. Secure. Meaningful.</h3>
-            <p className="text-gray-600">Here&apos;s how Talkers transforms your conversations into lasting connections</p>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-lg">
-              <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
-              <div>
-                <h4 className="font-semibold text-gray-900">Upload Your Conversations</h4>
-                <p className="text-gray-600 text-sm">Export and upload your WhatsApp chats or other message files</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
-              <div>
-                <h4 className="font-semibold text-gray-900">AI Learns Their Voice</h4>
-                <p className="text-gray-600 text-sm">Our AI analyzes conversation patterns to understand their unique style</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg">
-              <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
-              <div>
-                <h4 className="font-semibold text-gray-900">Start Meaningful Conversations</h4>
-                <p className="text-gray-600 text-sm">Chat naturally and feel their presence through authentic responses</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'privacy-security',
-      title: 'Your Privacy Matters',
-      description: 'Understanding how we protect your precious memories',
-      icon: Shield,
-      content: (
-        <div className="space-y-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Your Memories Are Sacred</h3>
-            <p className="text-gray-600">We&apos;ve built Talkers with privacy and security as our foundation</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <h4 className="font-semibold text-green-800 mb-2">🔒 End-to-End Encryption</h4>
-              <p className="text-green-700 text-sm">All conversations are encrypted and never shared</p>
-            </div>
-            
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">🗑️ Automatic Deletion</h4>
-              <p className="text-blue-700 text-sm">Data is automatically purged after inactivity</p>
-            </div>
-            
-            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <h4 className="font-semibold text-purple-800 mb-2">👤 No Human Access</h4>
-              <p className="text-purple-700 text-sm">Only you can access your conversations</p>
-            </div>
-            
-            <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-              <h4 className="font-semibold text-orange-800 mb-2">🏢 GDPR Compliant</h4>
-              <p className="text-orange-700 text-sm">Full compliance with privacy regulations</p>
-            </div>
           </div>
         </div>
       )
     },
     {
       id: 'upload-guide',
-      title: 'Upload Your First Conversation',
-      description: 'Let\'s preserve your first meaningful conversation',
+      title: 'Upload Your Conversation',
+      description: 'This takes less than 2 minutes',
       icon: Upload,
       content: (
         <div className="space-y-6">
           <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Ready to Begin?</h3>
-            <p className="text-gray-600">Upload your first WhatsApp conversation to start your journey</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Upload Your WhatsApp Chat</h3>
+            <p className="text-gray-600">Export your chat from WhatsApp and upload it here. We'll handle the rest!</p>
           </div>
           
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
-            <h4 className="font-semibold text-gray-900 mb-3">Quick Export Guide:</h4>
-            <ol className="text-sm text-gray-700 space-y-2">
-              <li className="flex gap-2">
-                <span className="font-bold">1.</span>
-                <span>Open WhatsApp and select the conversation you want to preserve</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold">2.</span>
-                <span>Tap the contact name → Export Chat</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold">3.</span>
-                <span>Choose &quot;Without Media&quot; for faster processing</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold">4.</span>
-                <span>Save the .txt file and upload it here</span>
-              </li>
-            </ol>
-          </div>
-          
-          {!userProgress.hasUploadedFile && (
-            <div className="text-center">
-              <Button 
-                onClick={() => router.push('/upload')}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Your First Conversation
-              </Button>
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">📱 On iPhone:</h4>
+                <p className="text-sm text-gray-700">Chat → Contact Name → Export Chat → Without Media</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">🤖 On Android:</h4>
+                <p className="text-sm text-gray-700">Chat → ⋮ Menu → More → Export Chat → Without Media</p>
+              </div>
             </div>
-          )}
+          </div>
+          
+          <div className="text-center">
+            <Button 
+              onClick={() => router.push('/upload')}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg px-8 py-4"
+            >
+              <Upload className="w-5 h-5 mr-2" />
+              Upload My Conversation
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">Your data is private and secure</p>
+          </div>
           
           {userProgress.hasUploadedFile && (
             <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-green-800 font-medium">Great! You&apos;ve uploaded your first conversation</p>
+              <p className="text-green-800 font-medium">Perfect! Your conversation is ready</p>
+              <Button 
+                onClick={() => router.push('/dashboard')}
+                className="bg-green-600 hover:bg-green-700 mt-3"
+              >
+                Start Chatting Now →
+              </Button>
             </div>
           )}
         </div>
@@ -223,103 +140,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, clas
         label: 'Upload Conversation',
         href: '/upload'
       }
-    },
-    {
-      id: 'first-chat',
-      title: 'Start Your First Conversation',
-      description: 'Experience the magic of reconnecting',
-      icon: MessageCircle,
-      content: (
-        <div className="space-y-6">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Time to Connect</h3>
-            <p className="text-gray-600">Start your first conversation and experience the magic of Talkers</p>
-          </div>
-          
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-            <h4 className="font-semibold text-gray-900 mb-3">💡 Tips for Your First Chat:</h4>
-            <ul className="text-sm text-gray-700 space-y-2">
-              <li>• Start with a simple greeting or question</li>
-              <li>• Ask about a shared memory or experience</li>
-              <li>• Be patient - the AI learns as you chat</li>
-              <li>• Let the conversation flow naturally</li>
-            </ul>
-          </div>
-          
-          {userProgress.hasCreatedSession && !userProgress.hasStartedChat && (
-            <div className="text-center">
-              <Button 
-                onClick={() => router.push('/dashboard')}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Go to Your Conversations
-              </Button>
-            </div>
-          )}
-          
-          {userProgress.hasStartedChat && (
-            <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-green-800 font-medium">Wonderful! You&apos;ve started your first conversation</p>
-            </div>
-          )}
-        </div>
-      )
-    },
-    {
-      id: 'explore-features',
-      title: 'Explore Advanced Features',
-      description: 'Discover what makes Talkers special',
-      icon: Sparkles,
-      content: (
-        <div className="space-y-6">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Discover More</h3>
-            <p className="text-gray-600">Explore the features that make Talkers truly special</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            <Card className="border border-gray-200 hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Heart className="w-5 h-5 text-pink-600" />
-                  <h4 className="font-semibold text-gray-900">Memory Timeline</h4>
-                </div>
-                <p className="text-gray-600 text-sm mb-3">
-                  Create and organize special moments, birthdays, and anniversaries
-                </p>
-                <Button variant="outline" size="sm" onClick={() => router.push('/memories')}>
-                  Explore Timeline
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card className="border border-gray-200 hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Settings className="w-5 h-5 text-blue-600" />
-                  <h4 className="font-semibold text-gray-900">Personalization</h4>
-                </div>
-                <p className="text-gray-600 text-sm mb-3">
-                  Customize your experience and notification preferences
-                </p>
-                <Button variant="outline" size="sm" onClick={() => router.push('/settings')}>
-                  Customize Settings
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6">
-            <h4 className="font-semibold text-gray-900 mb-3">🎉 You&apos;re All Set!</h4>
-            <p className="text-gray-700 text-sm">
-              You&apos;ve completed the onboarding process. Your 3-day trial gives you full access to all features. 
-              Explore, connect, and discover the healing power of preserved conversations.
-            </p>
-          </div>
-        </div>
-      )
     }
   ];
 

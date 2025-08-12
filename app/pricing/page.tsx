@@ -153,45 +153,66 @@ export default function PricingPage() {
 
   const plans = [
     {
-      name: 'Free Trial',
+      name: 'Free Forever',
       price: '$0',
-      period: '3 days',
-      description: 'Try Talkers with one sacred conversation',
+      period: 'always',
+      description: 'Keep your conversations safe forever',
       features: [
-        '1 conversation during trial',
-        'Full AI experience',
-        'Basic memory features',
-        'All conversation features',
-        '3-day access'
+        'Upload unlimited conversations',
+        'View all your memories',
+        'Search through conversations',
+        'Basic memory organization',
+        'Forever free access'
       ],
       limitations: [
-        'Limited to 3 days',
-        'Only 1 conversation',
-        'No advanced analytics'
+        'No AI chat responses',
+        'View-only conversations',
+        'Basic search only'
       ],
-      buttonText: 'Current Plan',
+      buttonText: 'Start Free',
       buttonVariant: 'outline' as const,
       popular: false,
       priceId: null
     },
     {
-      name: 'Premium',
-      price: '$12',
+      name: 'Starter',
+      price: '$4.99',
       period: 'month',
-      description: 'Unlimited sacred conversations',
+      description: 'Chat with your memories occasionally',
       features: [
-        'Unlimited conversations',
-        'Unlimited messages',
-        'Advanced AI with long-term memory',
-        'Memory timeline & milestones',
+        'Everything in Free',
+        '50 AI conversations per month',
+        'Smart conversation suggestions',
+        'Memory timeline',
+        'Email support'
+      ],
+      limitations: [
+        '50 messages limit per month',
+        'Basic AI responses only'
+      ],
+      buttonText: 'Try Starter',
+      buttonVariant: 'outline' as const,
+      popular: false,
+      priceId: 'price_starter_monthly'
+    },
+    {
+      name: 'Premium',
+      price: '$9.99',
+      period: 'month',
+      description: 'Unlimited conversations with your loved ones',
+      features: [
+        'Everything in Starter',
+        'Unlimited AI conversations',
+        'Advanced personality matching',
+        'Memory cards & reflections',
         'Birthday notifications',
         'Priority support',
         'Export conversations',
         'Advanced analytics',
-        'Memory cards & reflections'
+        'Family sharing (up to 3 people)'
       ],
       limitations: [],
-      buttonText: 'Upgrade to Premium',
+      buttonText: 'Go Premium',
       buttonVariant: 'default' as const,
       popular: true,
       priceId: 'price_1RfyijRA0wc6of2Oy41KKmIT'
@@ -244,7 +265,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
             <Card 
               key={plan.name}
@@ -333,12 +354,12 @@ export default function PricingPage() {
             <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
               <CardContent className="p-6">
                 <h4 className="font-semibold text-gray-900 mb-2">
-                  How does the 3-day free trial work?
+                  What's included in the free plan?
                 </h4>
                 <p className="text-gray-600">
-                  You get 3 days to experience Talkers with one complete conversation. 
-                  This gives you the full AI experience to connect with your memories. 
-                  After 3 days, upgrade to Premium for unlimited conversations.
+                  The free plan lets you upload and view all your conversations forever. 
+                  It's like a digital scrapbook of your memories. To chat with AI versions 
+                  of your loved ones, you'll need the Starter or Premium plan.
                 </p>
               </CardContent>
             </Card>
@@ -346,12 +367,11 @@ export default function PricingPage() {
             <Card className="border-0 bg-white/60 backdrop-blur-md shadow-lg">
               <CardContent className="p-6">
                 <h4 className="font-semibold text-gray-900 mb-2">
-                  What happens when my trial expires?
+                  Can I try AI conversations before paying?
                 </h4>
                 <p className="text-gray-600">
-                  When your 3-day trial ends, you&apos;ll need to upgrade to Premium to continue 
-                  having conversations. Your existing conversations and memories are safely stored 
-                  and will be accessible once you upgrade.
+                  Yes! We offer a 7-day free trial of our Starter plan, so you can try 
+                  AI conversations risk-free. No credit card required to start.
                 </p>
               </CardContent>
             </Card>

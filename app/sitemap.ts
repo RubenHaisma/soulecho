@@ -10,6 +10,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly' as const,
       priority: 1.0,
     },
+    {
+      url: `${baseUrl}/hotline`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.98,
+    },
     // High-priority grief support pages
     {
       url: `${baseUrl}/grief-support`,
